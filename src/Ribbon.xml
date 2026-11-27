@@ -43,6 +43,63 @@
           <checkBox id="chkOpenFolder" label="{{openfolder.label}}" getPressed="GetPressed" onAction="OnOption"
                     screentip="{{openfolder.label}}" supertip="{{openfolder.super}}" />
         </group>
+        <!-- three rows of icon-only buttons: a 3 x 3 grid -->
+        <group id="grpAlign" label="{{grp.align}}" getImage="GetImage">
+          <box id="boxAlignH" boxStyle="horizontal">
+            <button id="btnAlignLeft" label="{{align.left.label}}" showLabel="false" getImage="GetImage" onAction="OnAlign"
+                    screentip="{{align.left.label}}" supertip="{{align.left.super}}" />
+            <button id="btnAlignCenter" label="{{align.center.label}}" showLabel="false" getImage="GetImage" onAction="OnAlign"
+                    screentip="{{align.center.label}}" supertip="{{align.center.super}}" />
+            <button id="btnAlignRight" label="{{align.right.label}}" showLabel="false" getImage="GetImage" onAction="OnAlign"
+                    screentip="{{align.right.label}}" supertip="{{align.right.super}}" />
+          </box>
+          <box id="boxAlignV" boxStyle="horizontal">
+            <button id="btnAlignTop" label="{{align.top.label}}" showLabel="false" getImage="GetImage" onAction="OnAlign"
+                    screentip="{{align.top.label}}" supertip="{{align.top.super}}" />
+            <button id="btnAlignMiddle" label="{{align.middle.label}}" showLabel="false" getImage="GetImage" onAction="OnAlign"
+                    screentip="{{align.middle.label}}" supertip="{{align.middle.super}}" />
+            <button id="btnAlignBottom" label="{{align.bottom.label}}" showLabel="false" getImage="GetImage" onAction="OnAlign"
+                    screentip="{{align.bottom.label}}" supertip="{{align.bottom.super}}" />
+          </box>
+          <box id="boxDistribute" boxStyle="horizontal">
+            <button id="btnDistributeH" label="{{distribute.h.label}}" showLabel="false" getImage="GetImage" onAction="OnAlign"
+                    screentip="{{distribute.h.label}}" supertip="{{distribute.h.super}}" />
+            <button id="btnDistributeV" label="{{distribute.v.label}}" showLabel="false" getImage="GetImage" onAction="OnAlign"
+                    screentip="{{distribute.v.label}}" supertip="{{distribute.v.super}}" />
+            <toggleButton id="tglAlignToObject" label="{{toobject.label}}" showLabel="false" getImage="GetImage"
+                          getPressed="GetPressed" onAction="OnAlignToObject"
+                          screentip="{{toobject.label}}" supertip="{{toobject.super}}" />
+          </box>
+        </group>
+        <!-- two rows of two icon-only buttons each -->
+        <group id="grpRotate" label="{{grp.rotate}}" getImage="GetImage">
+          <box id="boxRotate" boxStyle="horizontal">
+            <button id="btnRotateLeft" label="{{rotate.left.label}}" showLabel="false" getImage="GetImage" onAction="OnTransform"
+                    screentip="{{rotate.left.label}}" supertip="{{rotate.left.super}}" />
+            <button id="btnRotateRight" label="{{rotate.right.label}}" showLabel="false" getImage="GetImage" onAction="OnTransform"
+                    screentip="{{rotate.right.label}}" supertip="{{rotate.right.super}}" />
+          </box>
+          <box id="boxFlip" boxStyle="horizontal">
+            <button id="btnFlipH" label="{{flip.h.label}}" showLabel="false" getImage="GetImage" onAction="OnTransform"
+                    screentip="{{flip.h.label}}" supertip="{{flip.h.super}}" />
+            <button id="btnFlipV" label="{{flip.v.label}}" showLabel="false" getImage="GetImage" onAction="OnTransform"
+                    screentip="{{flip.v.label}}" supertip="{{flip.v.super}}" />
+          </box>
+        </group>
+        <group id="grpMerge" label="{{grp.merge}}" getImage="GetImage">
+          <box id="boxMerge1" boxStyle="horizontal">
+            <button id="btnUnion" label="{{merge.union.label}}" showLabel="false" getImage="GetImage" onAction="OnMerge"
+                    screentip="{{merge.union.label}}" supertip="{{merge.union.super}}" />
+            <button id="btnCombine" label="{{merge.combine.label}}" showLabel="false" getImage="GetImage" onAction="OnMerge"
+                    screentip="{{merge.combine.label}}" supertip="{{merge.combine.super}}" />
+          </box>
+          <box id="boxMerge2" boxStyle="horizontal">
+            <button id="btnSubtract" label="{{merge.subtract.label}}" showLabel="false" getImage="GetImage" onAction="OnMerge"
+                    screentip="{{merge.subtract.label}}" supertip="{{merge.subtract.super}}" />
+            <button id="btnFragment" label="{{merge.fragment.label}}" showLabel="false" getImage="GetImage" onAction="OnMerge"
+                    screentip="{{merge.fragment.label}}" supertip="{{merge.fragment.super}}" />
+          </box>
+        </group>
       </tab>
     </tabs>
   </ribbon>

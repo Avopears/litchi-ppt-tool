@@ -134,6 +134,181 @@ namespace PptSelectionExport
             return bmp;
         }
 
+        // ------------------------------------------------------------ alignment glyphs
+
+        private static readonly Color AlignRed = Color.FromArgb(247, 52, 52);
+
+        /// <summary>Glyph of an align or distribute button.</summary>
+        public static Bitmap Align(AlignCommand cmd, int logical)
+        {
+            switch (cmd)
+            {
+                case AlignCommand.Left: return Glyph(logical, R(1, 1, 1, 14), R(3, 3, 11, 4), R(3, 9, 7, 4));
+                case AlignCommand.Center: return Glyph(logical, R(7, 1, 1, 14), R(2, 3, 11, 4), R(4, 9, 7, 4));
+                case AlignCommand.Right: return Glyph(logical, R(14, 1, 1, 14), R(2, 3, 11, 4), R(6, 9, 7, 4));
+                case AlignCommand.Top: return Glyph(logical, R(1, 1, 14, 1), R(3, 3, 4, 7), R(9, 3, 4, 11));
+                case AlignCommand.Middle: return Glyph(logical, R(1, 7, 14, 1), R(3, 2, 4, 11), R(9, 4, 4, 7));
+                case AlignCommand.Bottom: return Glyph(logical, R(1, 14, 14, 1), R(3, 2, 4, 11), R(9, 6, 4, 7));
+                case AlignCommand.DistributeHorizontally: return Glyph(logical, R(1, 1, 1, 14), R(14, 1, 1, 14), R(6, 3, 4, 10));
+                default: return Glyph(logical, R(1, 1, 14, 1), R(1, 14, 14, 1), R(3, 6, 10, 4));   // distribute vertically
+            }
+        }
+
+        /// <summary>Glyph of "align to object": small squares stepping towards a bigger one.</summary>
+        public static Bitmap AlignToObject(int logical)
+        {
+            return Glyph(logical, R(1, 1, 4, 4), R(5, 5, 4, 4), R(9, 9, 6, 6));
+        }
+
+        /// <summary>Glyph of a rotate or flip button (after iSlide's: a frame with a turning arrow, mirrored triangles).</summary>
+        public static Bitmap Transform(TransformCommand cmd, int logical)
+        {
+            int px = (int)Math.Round(logical * Scale);
+            float u = px / 16f;
+            var bmp = new Bitmap(px, px, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            using (var b = new SolidBrush(AlignRed))
+            using (var pen = new Pen(AlignRed, Math.Max(1f, 1.35f * u)) { LineJoin = LineJoin.Miter })
+            {
+                if (cmd == TransformCommand.RotateRight)
+                {
+                    g.TranslateTransform(px, 0);       // the same picture, mirrored
+                    g.ScaleTransform(-1, 1);
+                }
+                switch (cmd)
+                {
+                    case TransformCommand.RotateLeft:
+                    case TransformCommand.RotateRight:
+                        g.SmoothingMode = SmoothingMode.None;
+                        OutlineUnits(g, b, R(1, 7, 11, 7), u);
+                        g.SmoothingMode = SmoothingMode.AntiAlias;
+                        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                        float rad = 6.3f * u;
+                        g.DrawArc(pen, 8.2f * u - rad, 10.2f * u - rad, 2 * rad, 2 * rad, 0, -84);
+                        g.FillPolygon(b, new[] { P(4.6f, 3.9f, u), P(8.9f, 1.2f, u), P(8.9f, 6.6f, u) });
+                        break;
+                    case TransformCommand.FlipHorizontal:
+                        g.SmoothingMode = SmoothingMode.AntiAlias;
+                        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                        g.FillPolygon(b, new[] { P(7, 1, u), P(7, 15, u), P(1, 15, u) });
+                        g.DrawPolygon(pen, new[] { P(9.6f, 2.8f, u), P(9.6f, 14.4f, u), P(14.3f, 14.4f, u) });
+                        break;
+                    default:   // flip vertical
+                        g.SmoothingMode = SmoothingMode.AntiAlias;
+                        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                        g.FillPolygon(b, new[] { P(1, 1, u), P(15, 7, u), P(1, 7, u) });
+                        g.DrawPolygon(pen, new[] { P(1.6f, 9.6f, u), P(13.2f, 9.6f, u), P(1.6f, 14.3f, u) });
+                        break;
+                }
+            }
+            return bmp;
+        }
+
+        /// <summary>
+        /// Glyph of a boolean button: two overlapping squares, drawn as the result looks
+        /// (merged, overlap cut out, front square cut away, or split into pieces).
+        /// </summary>
+        public static Bitmap Merge(MergeCommand cmd, int logical)
+        {
+            int px = (int)Math.Round(logical * Scale);
+            float u = px / 16f;
+            var bmp = new Bitmap(px, px, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            using (var b = new SolidBrush(AlignRed))
+            using (var light = new SolidBrush(Color.FromArgb(250, 168, 168)))
+            using (var clear = new SolidBrush(Color.Transparent))
+            {
+                g.SmoothingMode = SmoothingMode.None;
+                float[] back = R(1, 1, 9, 9), front = R(6, 6, 9, 9), overlap = R(6, 6, 4, 4);
+                switch (cmd)
+                {
+                    case MergeCommand.Union:
+                        FillUnits(g, b, back, u); FillUnits(g, b, front, u);
+                        break;
+                    case MergeCommand.Combine:
+                        FillUnits(g, b, back, u); FillUnits(g, b, front, u);
+                        g.CompositingMode = CompositingMode.SourceCopy;
+                        FillUnits(g, clear, overlap, u);
+                        break;
+                    case MergeCommand.Subtract:
+                        OutlineUnits(g, light, front, u);    // the cutter, faint
+                        FillUnits(g, b, back, u);
+                        g.CompositingMode = CompositingMode.SourceCopy;
+                        FillUnits(g, clear, overlap, u);
+                        break;
+                    default:   // fragment: three separate pieces
+                        foreach (float[] r in new[] { R(1, 1, 9, 4), R(1, 5, 4, 5), R(6, 6, 4, 4), R(11, 6, 4, 9), R(6, 11, 5, 4) })
+                            FillUnits(g, b, r, u);
+                        break;
+                }
+            }
+            return bmp;
+        }
+
+        private static PointF P(float x, float y, float u) { return new PointF(x * u, y * u); }
+
+        private static void FillUnits(Graphics g, Brush b, float[] r, float unit)
+        {
+            int x0, x1, y0, y1;
+            SnapSpan(r[0], r[2], unit, out x0, out x1);
+            SnapSpan(r[1], r[3], unit, out y0, out y1);
+            g.FillRectangle(b, x0, y0, x1 - x0, y1 - y0);
+        }
+
+        /// <summary>A rectangle's frame with whole-pixel edges of one guide-line thickness, so the corners meet cleanly.</summary>
+        private static void OutlineUnits(Graphics g, Brush b, float[] r, float unit)
+        {
+            int x0, x1, y0, y1;
+            SnapSpan(r[0], r[2], unit, out x0, out x1);
+            SnapSpan(r[1], r[3], unit, out y0, out y1);
+            int t = Math.Max(1, (int)Math.Floor(unit + 0.25f));
+            g.FillRectangle(b, x0, y0, x1 - x0, t);
+            g.FillRectangle(b, x0, y1 - t, x1 - x0, t);
+            g.FillRectangle(b, x0, y0, t, y1 - y0);
+            g.FillRectangle(b, x1 - t, y0, t, y1 - y0);
+        }
+
+        private static float[] R(float x, float y, float w, float h) { return new[] { x, y, w, h }; }
+
+        /// <summary>
+        /// Filled rectangles {x, y, width, height} on a 16 × 16 grid, snapped to whole device pixels
+        /// so that the glyphs stay sharp at every display scaling.
+        /// </summary>
+        private static Bitmap Glyph(int logical, params float[][] rects)
+        {
+            int px = (int)Math.Round(logical * Scale);
+            float unit = px / 16f;
+            var bmp = new Bitmap(px, px, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            using (var b = new SolidBrush(AlignRed))
+            {
+                g.SmoothingMode = SmoothingMode.None;
+                foreach (float[] r in rects) FillUnits(g, b, r, unit);
+            }
+            return bmp;
+        }
+
+        /// <summary>
+        /// Device pixels covered by one grid span. One-unit guide lines get the same whole-pixel
+        /// thickness everywhere (at 150 % some would be 1 pixel and some 2 otherwise).
+        /// </summary>
+        private static void SnapSpan(float pos, float size, float unit, out int start, out int end)
+        {
+            if (size <= 1f)
+            {
+                int t = Math.Max(1, (int)Math.Floor(unit + 0.25f));
+                start = Snap((pos + size / 2) * unit - t / 2f);
+                end = start + t;
+            }
+            else
+            {
+                start = Snap(pos * unit);
+                end = Math.Max(start + 1, Snap((pos + size) * unit));
+            }
+        }
+
+        private static int Snap(float v) { return (int)Math.Floor(v + 0.5f); }
+
         private static GraphicsPath RoundRect(RectangleF r, float radius)
         {
             float d = radius * 2;

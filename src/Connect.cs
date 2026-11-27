@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -12,10 +13,10 @@ using Office = Microsoft.Office.Core;
 using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 
 [assembly: AssemblyTitle("PptSelectionExport")]
-[assembly: AssemblyDescription("PowerPoint add-in: export the selected objects as PDF / SVG / PNG / JPG")]
+[assembly: AssemblyDescription("PowerPoint add-in: export the selected objects as PDF / SVG / PNG / JPG, and align or distribute them")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.4.1.0")]
-[assembly: AssemblyFileVersion("1.4.1.0")]
+[assembly: AssemblyVersion("1.5.0.0")]
+[assembly: AssemblyFileVersion("1.5.0.0")]
 [assembly: ComVisible(false)]
 
 namespace PptSelectionExport
@@ -48,7 +49,6 @@ namespace PptSelectionExport
         private PowerPoint.Application _app;
         private Office.IRibbonUI _ribbon;
         private Settings _settings = Settings.Load();
-        private int[] _customColors;
 
         // ------------------------------------------------------------ add-in lifetime
 
@@ -94,7 +94,13 @@ namespace PptSelectionExport
             try
             {
                 Bitmap bmp;
-                switch (control.Id)
+                AlignCommand cmd;
+                TransformCommand turn;
+                MergeCommand merge;
+                if (AlignButtons.TryGetValue(control.Id, out cmd)) bmp = Icons.Align(cmd, 16);
+                else if (TransformButtons.TryGetValue(control.Id, out turn)) bmp = Icons.Transform(turn, 16);
+                else if (MergeButtons.TryGetValue(control.Id, out merge)) bmp = Icons.Merge(merge, 16);
+                else switch (control.Id)
                 {
                     case "btnPdf": bmp = Icons.Document("PDF", Color.FromArgb(212, 48, 40)); break;
                     case "btnSvg": bmp = Icons.Document("SVG", Color.FromArgb(234, 138, 20)); break;
@@ -102,6 +108,11 @@ namespace PptSelectionExport
                     case "tglTransparent": bmp = Icons.Checker(32); break;
                     case "tglColor": bmp = Icons.Swatch(_settings.Color, 32); break;
                     case "btnMoreColors": bmp = Icons.Palette(16); break;
+                    case "tglAlignToObject": bmp = Icons.AlignToObject(16); break;
+                    // shown when a group is collapsed
+                    case "grpAlign": bmp = Icons.Align(AlignCommand.Left, 32); break;
+                    case "grpRotate": bmp = Icons.Transform(TransformCommand.RotateRight, 32); break;
+                    case "grpMerge": bmp = Icons.Merge(MergeCommand.Union, 32); break;
                     default:
                         Color c;
                         if (!Settings.TryParseHex(control.Tag, out c)) return null;
@@ -120,6 +131,7 @@ namespace PptSelectionExport
                 case "tglTransparent": return _settings.Transparent;
                 case "tglColor": return !_settings.Transparent;
                 case "chkOpenFolder": return _settings.OpenFolder;
+                case "tglAlignToObject": return _settings.AlignToObject;
             }
             return false;
         }
@@ -146,15 +158,12 @@ namespace PptSelectionExport
 
         public void OnPickColor(Office.IRibbonControl control)
         {
-            using (var dlg = new ColorDialog())
+            IWin32Window owner = Owner();
+            using (var dlg = new ColorPickerForm(_settings.Color, _settings.RecentColors, owner))
             {
-                dlg.FullOpen = true;
-                dlg.AnyColor = true;
-                dlg.Color = _settings.Color;
-                if (_customColors != null) dlg.CustomColors = _customColors;
-                if (dlg.ShowDialog(Owner()) != DialogResult.OK) return;
-                _customColors = dlg.CustomColors;
-                SetColor(dlg.Color);
+                if (dlg.ShowDialog(owner) != DialogResult.OK) return;
+                _settings.AddRecent(dlg.SelectedColor);
+                SetColor(dlg.SelectedColor);
             }
         }
 
@@ -205,30 +214,10 @@ namespace PptSelectionExport
             try
             {
                 PowerPoint.DocumentWindow win;
-                try { win = _app.ActiveWindow; }
-                catch { win = null; }
-                if (win == null)
-                {
-                    Info(owner, Strings.T("msg.nowindow"));
-                    return;
-                }
-
-                PowerPoint.Selection sel = win.Selection;
-                PowerPoint.PpSelectionType type = sel.Type;
-                if (type != PowerPoint.PpSelectionType.ppSelectionShapes && type != PowerPoint.PpSelectionType.ppSelectionText)
-                {
-                    Info(owner, Strings.T("msg.noselection"));
-                    return;
-                }
-
-                bool isChild = false;
-                try { isChild = sel.HasChildShapeRange; } catch { }
-                PowerPoint.ShapeRange range = isChild ? sel.ChildShapeRange : sel.ShapeRange;
-                if (range.Count == 0)
-                {
-                    Info(owner, Strings.T("msg.noselection"));
-                    return;
-                }
+                PowerPoint.Selection sel;
+                bool isChild;
+                PowerPoint.ShapeRange range = SelectedShapes(owner, "title", "msg.nowindow", "msg.noselection", out win, out sel, out isChild);
+                if (range == null) return;
 
                 PowerPoint.Presentation pres = win.Presentation;
                 PowerPoint.Slide slide = null;
@@ -337,9 +326,168 @@ namespace PptSelectionExport
             }
         }
 
-        private static void Info(IWin32Window owner, string text)
+        // ------------------------------------------------------------ align
+
+        private static readonly Dictionary<string, AlignCommand> AlignButtons = new Dictionary<string, AlignCommand>
         {
-            MessageBox.Show(owner, text, Strings.T("title"), MessageBoxButtons.OK, MessageBoxIcon.Information);
+            { "btnAlignLeft", AlignCommand.Left },
+            { "btnAlignCenter", AlignCommand.Center },
+            { "btnAlignRight", AlignCommand.Right },
+            { "btnAlignTop", AlignCommand.Top },
+            { "btnAlignMiddle", AlignCommand.Middle },
+            { "btnAlignBottom", AlignCommand.Bottom },
+            { "btnDistributeH", AlignCommand.DistributeHorizontally },
+            { "btnDistributeV", AlignCommand.DistributeVertically },
+        };
+
+        public void OnAlign(Office.IRibbonControl control)
+        {
+            AlignCommand cmd;
+            if (AlignButtons.TryGetValue(control.Id, out cmd)) Align(cmd);
+        }
+
+        public void OnAlignToObject(Office.IRibbonControl control, bool pressed)
+        {
+            _settings.AlignToObject = pressed;
+            _settings.Save();
+        }
+
+        private void Align(AlignCommand cmd)
+        {
+            IWin32Window owner = Owner();
+            try
+            {
+                PowerPoint.DocumentWindow win;
+                PowerPoint.Selection sel;
+                bool isChild;
+                PowerPoint.ShapeRange range = SelectedShapes(owner, "title.align", "msg.align.nowindow", "msg.align.noselection", out win, out sel, out isChild);
+                if (range == null) return;
+
+                PowerPoint.PageSetup page = win.Presentation.PageSetup;
+                StartUndoEntry();
+                int unmoved;
+                AlignResult result = Aligner.Apply(range, cmd, _settings.AlignToObject, page.SlideWidth, page.SlideHeight, out unmoved);
+                if (result == AlignResult.NeedThree) Info(owner, Strings.T("msg.align.needthree"), "title.align");
+                else if (unmoved > 0) Info(owner, Strings.T("msg.align.unmoved", unmoved), "title.align");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(owner, Strings.T("msg.align.failed", ex.Message), Strings.T("title.align"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        // ------------------------------------------------------------ rotate / flip, merge shapes
+
+        private static readonly Dictionary<string, TransformCommand> TransformButtons = new Dictionary<string, TransformCommand>
+        {
+            { "btnRotateLeft", TransformCommand.RotateLeft },
+            { "btnRotateRight", TransformCommand.RotateRight },
+            { "btnFlipH", TransformCommand.FlipHorizontal },
+            { "btnFlipV", TransformCommand.FlipVertical },
+        };
+
+        private static readonly Dictionary<string, MergeCommand> MergeButtons = new Dictionary<string, MergeCommand>
+        {
+            { "btnUnion", MergeCommand.Union },
+            { "btnCombine", MergeCommand.Combine },
+            { "btnSubtract", MergeCommand.Subtract },
+            { "btnFragment", MergeCommand.Fragment },
+        };
+
+        public void OnTransform(Office.IRibbonControl control)
+        {
+            TransformCommand cmd;
+            if (!TransformButtons.TryGetValue(control.Id, out cmd)) return;
+            IWin32Window owner = Owner();
+            try
+            {
+                PowerPoint.DocumentWindow win;
+                PowerPoint.Selection sel;
+                bool isChild;
+                PowerPoint.ShapeRange range = SelectedShapes(owner, "title.rotate", "msg.shape.nowindow", "msg.shape.noselection", out win, out sel, out isChild);
+                if (range == null) return;
+                StartUndoEntry();
+                ShapeTools.Transform(range, cmd);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(owner, Strings.T("msg.shape.failed", ex.Message), Strings.T("title.rotate"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        public void OnMerge(Office.IRibbonControl control)
+        {
+            MergeCommand cmd;
+            if (!MergeButtons.TryGetValue(control.Id, out cmd)) return;
+            IWin32Window owner = Owner();
+            MergeResult result;
+            try
+            {
+                PowerPoint.DocumentWindow win;
+                PowerPoint.Selection sel;
+                bool isChild;
+                PowerPoint.ShapeRange range = SelectedShapes(owner, "title.merge", "msg.shape.nowindow", "msg.shape.noselection", out win, out sel, out isChild);
+                if (range == null) return;
+                PowerPoint.Shapes shapes = null;
+                try { shapes = sel.SlideRange[1].Shapes; } catch { }      // not on a slide (a master, say): the result is not selected
+                StartUndoEntry();
+                result = ShapeTools.Merge(range, isChild, cmd, shapes);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(owner, Strings.T("msg.merge.failed", ex.Message), Strings.T("title.merge"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+            if (result == MergeResult.NeedTwo) Info(owner, Strings.T("msg.merge.needtwo"), "title.merge");
+            else if (result == MergeResult.Grouped) Info(owner, Strings.T("msg.merge.grouped"), "title.merge");
+        }
+
+        // ------------------------------------------------------------ helpers
+
+        /// <summary>So that one Undo takes back the whole command, and nothing the user did before it.</summary>
+        private void StartUndoEntry()
+        {
+            try { _app.StartNewUndoEntry(); } catch { }
+        }
+
+        /// <summary>
+        /// The shapes selected in the active window (or inside a group, when the selection is there),
+        /// in the order they were selected. Null, after telling the user what to do, when there are none.
+        /// </summary>
+        private PowerPoint.ShapeRange SelectedShapes(IWin32Window owner, string titleKey, string noWindowKey, string noSelectionKey,
+                                                     out PowerPoint.DocumentWindow win, out PowerPoint.Selection sel, out bool isChild)
+        {
+            sel = null;
+            isChild = false;
+            try { win = _app.ActiveWindow; }
+            catch { win = null; }
+            if (win == null)
+            {
+                Info(owner, Strings.T(noWindowKey), titleKey);
+                return null;
+            }
+
+            sel = win.Selection;
+            PowerPoint.PpSelectionType type = sel.Type;
+            if (type != PowerPoint.PpSelectionType.ppSelectionShapes && type != PowerPoint.PpSelectionType.ppSelectionText)
+            {
+                Info(owner, Strings.T(noSelectionKey), titleKey);
+                return null;
+            }
+
+            try { isChild = sel.HasChildShapeRange; } catch { }
+            PowerPoint.ShapeRange range = isChild ? sel.ChildShapeRange : sel.ShapeRange;
+            if (range.Count == 0)
+            {
+                Info(owner, Strings.T(noSelectionKey), titleKey);
+                return null;
+            }
+            return range;
+        }
+
+        private static void Info(IWin32Window owner, string text, string titleKey = "title")
+        {
+            MessageBox.Show(owner, text, Strings.T(titleKey), MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private IWin32Window Owner()

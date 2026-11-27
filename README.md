@@ -6,6 +6,8 @@
 Select some objects on a slide, click one button, and get **just those objects** as a
 **PDF**, **SVG**, **PNG** or **JPG** — cropped to the smallest rectangle around them,
 with a transparent or solid-colour background.
+It also has one-click **align and distribute** buttons (which can align to a chosen object and
+leave connectors glued to their shapes), **rotate / flip** and **boolean** (merge shapes) buttons.
 
 ![The add-in's "Litchi" tab in PowerPoint](docs/ribbon.jpg)
 
@@ -31,7 +33,7 @@ Requirements: Windows, desktop PowerPoint from Microsoft 365 or Office 2019 / 20
 (32- or 64-bit). No administrator rights needed.
 
 1. Open the **[latest release](https://github.com/Avopears/litchi-ppt-tool/releases/latest)** and download
-   the installer under *Assets*. Its name carries the version, for example `Litchi-Setup-1.4.1.exe`.
+   the installer under *Assets*. Its name carries the version, for example `Litchi-Setup-1.5.0.exe`.
 2. Close PowerPoint and run the installer. You can keep the suggested location or pick your own folder.
 3. Start PowerPoint. The add-in's tab is called **Litchi** and sits right after **View**.
 
@@ -67,8 +69,47 @@ Uninstalling removes only the add-in's own files, never anything else in that lo
 1. Select the objects to export on a slide (Shift/Ctrl-click, or drag a selection box).
    You can also select individual objects inside a group.
 2. In **Background** choose **Transparent** or **Color** (the arrow under *Color* offers presets and *More colors…*).
+   *More colors…* opens a colour picker: drag in the colour square and the hue bar, or type a hex
+   or RGB value; below are common colours and the ones you used recently (double-click one to take it).
 3. Click **Export PDF**, **Export SVG** or **Export Image** and choose where to save.
    *Export Image* lets you pick PNG or JPG in the save dialog; **Image resolution** sets its DPI.
+
+### Align
+
+The nine buttons of the **Align** group (hover over one to see its name and what it does):
+
+| | Buttons |
+| --- | --- |
+| Row 1 | Align Left · Align Center · Align Right |
+| Row 2 | Align Top · Align Middle · Align Bottom |
+| Row 3 | Distribute Horizontally · Distribute Vertically · Align to Object (on/off) |
+
+- **Align**: with several objects selected, they line up within their overall bounds, like
+  PowerPoint's own commands; a single object is aligned to the slide.
+- **Distribute**: the two outermost objects stay put and the ones between are spaced evenly
+  (select at least 3).
+- **Align to Object**: when on, the **first object you select** is the reference and does not move.
+  Click it first, Shift- or Ctrl-click the others, then click an align button. Distributing then
+  spreads the other objects evenly inside the reference object (with the same gap at both ends),
+  which is handy for placing items evenly in a box. The setting is remembered.
+- **Connectors stay glued**: a selected connector that is glued to shapes is not aligned on its
+  own; it follows the shapes it is glued to. (PowerPoint's own commands tear such connectors off.)
+- Rotated objects are aligned and distributed by the space they actually take up.
+- Each click is a single undo step: one Ctrl+Z takes it back.
+
+### Rotate
+
+**Rotate Left 90°**, **Rotate Right 90°**, **Flip Horizontal**, **Flip Vertical**: each selected
+object turns or mirrors about its own centre and stays where it is.
+
+### Merge
+
+**Union**, **Combine** (overlaps cut out), **Subtract** and **Fragment**: PowerPoint's *Merge Shapes*.
+
+- The shape you click first is the primary one: the result keeps its fill and outline, and
+  *Subtract* cuts the other shapes out of it.
+- Select at least 2 shapes. Groups have to be ungrouped first.
+- The result is selected afterwards; one Ctrl+Z takes it back.
 
 ## Good to know
 
@@ -101,8 +142,10 @@ This writes `dist\PptSelectionExport.dll` (the add-in) and `dist\Litchi-Setup-<v
 powershell -ExecutionPolicy Bypass -File .\tests\run.ps1
 ```
 
-runs the export tests against the PowerPoint on your machine: it builds a throw-away
-presentation and exports many kinds of selections in every format.
+runs the tests against the PowerPoint on your machine: it builds throw-away presentations,
+exports many kinds of selections in every format, and aligns and distributes many kinds of
+objects, comparing the results with PowerPoint's own commands, and finally tests rotate, flip,
+the boolean operations and the colour picker's colour maths. Add `align` to skip the export tests.
 
 | File | What it does |
 | --- | --- |
@@ -111,10 +154,13 @@ presentation and exports many kinds of selections in every format.
 | `src/Exporter.cs` | The SVG, PNG/JPG and PDF export pipelines |
 | `src/PdfCropper.cs` | Crops PowerPoint's full-slide PDF to the selection (PDF incremental update) |
 | `src/SvgTools.cs` | Reads the selection bounds; adds the SVG background |
+| `src/Aligner.cs` | Align and distribute |
+| `src/ShapeTools.cs` | Rotate, flip and the boolean operations |
+| `src/ColorPicker.cs` | The colour picker |
 | `src/Strings.cs` | All interface text, Chinese and English |
 | `src/Icons.cs`, `src/Settings.cs` | Ribbon icons drawn in code; remembered settings |
 | `installer/Setup.cs` | The exe installer / uninstaller |
-| `tests/TestHarness.cs` | Export tests that drive PowerPoint directly |
+| `tests/TestHarness.cs`, `tests/AlignTests.cs`, `tests/ShapeToolsTests.cs` | Tests that drive PowerPoint directly |
 
 ### How it works
 

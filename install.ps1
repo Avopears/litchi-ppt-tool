@@ -63,7 +63,7 @@ Set-Default "HKCU:\Software\Classes\$progId\CLSID" $clsid
 $addin = "HKCU:\Software\Microsoft\Office\PowerPoint\Addins\$progId"
 New-Item -Path $addin -Force | Out-Null
 Set-ItemProperty -Path $addin -Name 'FriendlyName' -Value '选区导出 Export Selection (PDF / SVG / PNG / JPG)'
-Set-ItemProperty -Path $addin -Name 'Description' -Value '把选中的对象按最小外接矩形导出为 PDF、SVG、PNG 或 JPG，可设置背景颜色或透明。 Export the selected objects, cropped to their bounding box, as PDF, SVG, PNG or JPG.'
+Set-ItemProperty -Path $addin -Name 'Description' -Value '把选中的对象按最小外接矩形导出为 PDF、SVG、PNG 或 JPG，可设置背景颜色或透明；另有对齐、旋转和布尔运算工具。 Export the selected objects, cropped to their bounding box, as PDF, SVG, PNG or JPG; plus align, rotate and merge-shape tools.'
 Set-ItemProperty -Path $addin -Name 'LoadBehavior' -Value 3 -Type DWord
 
 Write-Host "安装完成 / Installed: $installed" -ForegroundColor Green

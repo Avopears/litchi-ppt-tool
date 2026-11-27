@@ -26,8 +26,8 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("PptSelectionExport Setup")]
 [assembly: AssemblyDescription("Installer for the PowerPoint add-in \"Export Selection\"")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.4.1.0")]
-[assembly: AssemblyFileVersion("1.4.1.0")]
+[assembly: AssemblyVersion("1.5.0.0")]
+[assembly: AssemblyFileVersion("1.5.0.0")]
 
 namespace PptSelectionExportSetup
 {
@@ -275,7 +275,7 @@ namespace PptSelectionExportSetup
                     using (RegistryKey key = Registry.CurrentUser.CreateSubKey(AddinKey))
                     {
                         key.SetValue("FriendlyName", "选区导出 Export Selection (PDF / SVG / PNG / JPG)");
-                        key.SetValue("Description", "把选中的对象按最小外接矩形导出为 PDF、SVG、PNG 或 JPG，可设置背景颜色或透明。 Export the selected objects, cropped to their bounding box, as PDF, SVG, PNG or JPG.");
+                        key.SetValue("Description", "把选中的对象按最小外接矩形导出为 PDF、SVG、PNG 或 JPG，可设置背景颜色或透明；另有对齐、旋转和布尔运算工具。 Export the selected objects, cropped to their bounding box, as PDF, SVG, PNG or JPG; plus align, rotate and merge-shape tools.");
                         key.SetValue("LoadBehavior", 3, RegistryValueKind.DWord);
                     }
                 },
@@ -772,8 +772,8 @@ namespace PptSelectionExportSetup
             }
             else
             {
-                _desc.Text = T("把幻灯片上选中的对象导出为图片或矢量图，范围是刚好包住它们的最小矩形，背景可选透明或纯色。",
-                               "Export the objects you select on a slide as pictures or vector graphics, cropped to the smallest rectangle around them, with a transparent or solid background.");
+                _desc.Text = T("把幻灯片上选中的对象导出为图片或矢量图，范围是刚好包住它们的最小矩形，背景可选透明或纯色；还有对齐、旋转和布尔运算工具。",
+                               "Export the objects you select as pictures or vector graphics, cropped tight around them, on a transparent or solid background. Align, rotate and merge them, too.");
                 _pathCaption.Text = T("安装位置", "Install location");
                 string old = _previewOldVersion ?? (installed ? Installer.InstalledVersion() : null);
                 bool sameVersion = old == Installer.Version;
@@ -791,8 +791,8 @@ namespace PptSelectionExportSetup
                 _secondary.Text = done ? T("打开 PowerPoint", "Open PowerPoint") : T("卸载", "Uninstall");
                 _secondary.Visible = done || (start && installed);
                 _doneTitle.Text = T("安装完成", "Installed");
-                _doneText.Text = T("打开 PowerPoint，在“视图”选项卡后面可以找到“Litchi”选项卡。\n先在幻灯片上选中对象，再点导出按钮。",
-                                   "Start PowerPoint: the Litchi tab appears after the View tab.\nSelect objects on a slide, then click one of the export buttons.");
+                _doneText.Text = T("打开 PowerPoint，在“视图”选项卡后面可以找到“Litchi”选项卡。\n先在幻灯片上选中对象，再点导出或对齐按钮。",
+                                   "Start PowerPoint: the Litchi tab appears after the View tab.\nSelect objects on a slide, then click an export or align button.");
             }
             LayoutButtons();
             Invalidate();
@@ -941,8 +941,8 @@ namespace PptSelectionExportSetup
 
             if (_page == Page.Start && !_uninstall)
             {
-                // what it exports, as small tags
-                string[] tags = { "PDF", "SVG", "PNG", "JPG", T("透明 / 纯色背景", "Transparent / solid background") };
+                // what it does, as small tags
+                string[] tags = { "PDF", "SVG", "PNG", "JPG", T("透明 / 纯色背景", "Transparent / solid background"), T("对齐 / 旋转 / 布尔", "Align / rotate / merge") };
                 float x = Ui.S(40), y = Ui.S(182);
                 using (Font f = Ui.Font(8.5f, FontStyle.Regular))
                 {

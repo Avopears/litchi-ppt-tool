@@ -31,6 +31,14 @@ namespace PptSelectionExport
 
         public static IEnumerable<string> Keys { get { return Table.Keys; } }
 
+        // the part every align tooltip shares: what the objects are aligned to
+        private const string AlignRefZh = "只选一个对象时对齐到幻灯片；打开“对齐到对象”后，以第一个选中的对象为准，它本身不动。";
+        private const string AlignRefEn = " One object on its own is aligned to the slide. With Align to Object on, the first object you selected stays put and the others align to it.";
+
+        // the part every boolean tooltip shares
+        private const string MergeRefZh = "结果沿用第一个选中的形状的格式（填充、线条）：先单击它，再按住 Shift 或 Ctrl 单击其他形状。至少选 2 个形状。";
+        private const string MergeRefEn = " The result keeps the format of the first shape you select: click it first, then Shift- or Ctrl-click the others. Select at least 2 shapes.";
+
         private static readonly Dictionary<string, string[]> Table = new Dictionary<string, string[]>
         {
             // ---- ribbon
@@ -73,6 +81,55 @@ namespace PptSelectionExport
             { "openfolder.label", new[] { "完成后打开文件夹", "Show file when done" } },
             { "openfolder.super", new[] { "导出成功后在资源管理器中定位到导出的文件。", "Opens File Explorer with the exported file selected." } },
 
+            // ---- ribbon: align
+            { "grp.align", new[] { "对齐", "Align" } },
+            { "align.left.label", new[] { "左对齐", "Align Left" } },
+            { "align.left.super", new[] { "让选中的对象左边缘对齐，对齐到最左边的对象。" + AlignRefZh, "Lines up the left edges of the selected objects with the leftmost one." + AlignRefEn } },
+            { "align.center.label", new[] { "左右居中", "Align Center" } },
+            { "align.center.super", new[] { "让选中的对象在左右方向上居中，对齐到它们整体范围的竖直中线。" + AlignRefZh, "Lines up the selected objects on the vertical centre line of the whole selection." + AlignRefEn } },
+            { "align.right.label", new[] { "右对齐", "Align Right" } },
+            { "align.right.super", new[] { "让选中的对象右边缘对齐，对齐到最右边的对象。" + AlignRefZh, "Lines up the right edges of the selected objects with the rightmost one." + AlignRefEn } },
+            { "align.top.label", new[] { "上对齐", "Align Top" } },
+            { "align.top.super", new[] { "让选中的对象上边缘对齐，对齐到最上面的对象。" + AlignRefZh, "Lines up the top edges of the selected objects with the highest one." + AlignRefEn } },
+            { "align.middle.label", new[] { "上下居中", "Align Middle" } },
+            { "align.middle.super", new[] { "让选中的对象在上下方向上居中，对齐到它们整体范围的水平中线。" + AlignRefZh, "Lines up the selected objects on the horizontal centre line of the whole selection." + AlignRefEn } },
+            { "align.bottom.label", new[] { "下对齐", "Align Bottom" } },
+            { "align.bottom.super", new[] { "让选中的对象下边缘对齐，对齐到最下面的对象。" + AlignRefZh, "Lines up the bottom edges of the selected objects with the lowest one." + AlignRefEn } },
+            { "distribute.h.label", new[] { "横向分布", "Distribute Horizontally" } },
+            { "distribute.h.super", new[] {
+                "让选中的对象左右间距相等：最左和最右的对象不动，中间的对象等距排开（至少选 3 个）。只选一个对象时在幻灯片上左右居中；打开“对齐到对象”后，其他对象在第一个选中的对象的宽度范围内等距排开。",
+                "Spaces the selected objects evenly from left to right: the outermost two stay put and the ones between them move (select at least 3). One object on its own is centred on the slide. With Align to Object on, the other objects are spread evenly across the width of the first object you selected." } },
+            { "distribute.v.label", new[] { "纵向分布", "Distribute Vertically" } },
+            { "distribute.v.super", new[] {
+                "让选中的对象上下间距相等：最上和最下的对象不动，中间的对象等距排开（至少选 3 个）。只选一个对象时在幻灯片上上下居中；打开“对齐到对象”后，其他对象在第一个选中的对象的高度范围内等距排开。",
+                "Spaces the selected objects evenly from top to bottom: the outermost two stay put and the ones between them move (select at least 3). One object on its own is centred on the slide. With Align to Object on, the other objects are spread evenly across the height of the first object you selected." } },
+            // ---- ribbon: rotate / flip
+            { "grp.rotate", new[] { "旋转", "Rotate" } },
+            { "rotate.left.label", new[] { "向左旋转 90°", "Rotate Left 90°" } },
+            { "rotate.left.super", new[] { "把选中的每个对象逆时针旋转 90°，各自绕自己的中心转，位置不变。", "Turns each selected object 90° counter-clockwise about its own centre." } },
+            { "rotate.right.label", new[] { "向右旋转 90°", "Rotate Right 90°" } },
+            { "rotate.right.super", new[] { "把选中的每个对象顺时针旋转 90°，各自绕自己的中心转，位置不变。", "Turns each selected object 90° clockwise about its own centre." } },
+            { "flip.h.label", new[] { "水平翻转", "Flip Horizontal" } },
+            { "flip.h.super", new[] { "把选中的每个对象左右镜像翻转，位置不变。", "Mirrors each selected object left to right, in place." } },
+            { "flip.v.label", new[] { "垂直翻转", "Flip Vertical" } },
+            { "flip.v.super", new[] { "把选中的每个对象上下镜像翻转，位置不变。", "Mirrors each selected object top to bottom, in place." } },
+
+            // ---- ribbon: boolean (merge shapes)
+            { "grp.merge", new[] { "布尔", "Merge" } },
+            { "merge.union.label", new[] { "联合", "Union" } },
+            { "merge.union.super", new[] { "把选中的形状合并成一个形状，包含它们覆盖的全部区域。" + MergeRefZh, "Merges the selected shapes into one shape that covers all of them." + MergeRefEn } },
+            { "merge.combine.label", new[] { "组合", "Combine" } },
+            { "merge.combine.super", new[] { "把选中的形状合并成一个形状，重叠的部分镂空。" + MergeRefZh, "Merges the selected shapes into one shape with the overlapping parts cut out." + MergeRefEn } },
+            { "merge.subtract.label", new[] { "剪除", "Subtract" } },
+            { "merge.subtract.super", new[] { "从第一个选中的形状中剪掉其他形状盖住的部分。" + MergeRefZh, "Cuts the other shapes out of the first shape you selected." + MergeRefEn } },
+            { "merge.fragment.label", new[] { "拆分", "Fragment" } },
+            { "merge.fragment.super", new[] { "沿所有形状的轮廓，把它们切成多个独立的形状。" + MergeRefZh, "Cuts the shapes apart along all their outlines into separate pieces." + MergeRefEn } },
+
+            { "toobject.label", new[] { "对齐到对象", "Align to Object" } },
+            { "toobject.super", new[] {
+                "打开后，对齐和分布以第一个选中的对象为参照，它本身不动。先单击作为参照的对象，再按住 Shift 或 Ctrl 单击其他对象，然后点对齐或分布按钮。分布时，其他对象在参照对象的范围内等距排开，适合把几个对象均匀地放进一个框里。",
+                "When on, aligning and distributing use the first object you select as the reference, and that object does not move. Click the reference object first, Shift- or Ctrl-click the others, then click an align or distribute button. Distributing spreads the other objects evenly inside the reference object, which is handy for placing items evenly in a box." } },
+
             // ---- dialogs
             { "title", new[] { "选区导出", "Export Selection" } },
             { "dlg.pdf", new[] { "导出选中内容为 PDF", "Export selection as PDF" } },
@@ -97,6 +154,50 @@ namespace PptSelectionExport
             { "msg.locked", new[] {
                 "\n\n如果目标文件正被其他程序打开（例如 PDF 阅读器或看图软件），请先关闭它再导出。",
                 "\n\nIf the target file is open in another program (a PDF reader or image viewer, for example), close it and try again." } },
+            { "title.align", new[] { "对齐", "Align" } },
+            { "msg.align.nowindow", new[] {
+                "请先打开一个演示文稿，并在普通编辑视图中选中要对齐的对象。",
+                "Open a presentation and select the objects to align in the normal editing view." } },
+            { "msg.align.noselection", new[] {
+                "请先选中要对齐的对象。\n可以按住 Shift / Ctrl 逐个点选，或用鼠标拖出选框一次选中多个。",
+                "Select the objects to align first.\nShift- or Ctrl-click to pick several, or drag a selection box around them." } },
+            { "msg.align.needthree", new[] {
+                "分布至少需要选中 3 个对象。\n（打开“对齐到对象”后，也可以让其他对象在第一个选中的对象范围内等距排开。）",
+                "Distributing needs at least 3 selected objects.\n(With Align to Object on, you can also spread the other objects evenly inside the first object you select.)" } },
+            { "msg.align.unmoved", new[] {
+                "有 {0} 个对象无法移动（可能被锁定了），其他对象已经对齐。",
+                "{0} of the objects could not be moved (they may be locked). The others were aligned." } },
+            { "msg.align.failed", new[] { "对齐失败：\n{0}", "Could not align:\n{0}" } },
+            { "title.rotate", new[] { "旋转", "Rotate" } },
+            { "title.merge", new[] { "布尔运算", "Merge Shapes" } },
+            { "msg.shape.nowindow", new[] {
+                "请先打开一个演示文稿，并在普通编辑视图中选中对象。",
+                "Open a presentation and select objects in the normal editing view." } },
+            { "msg.shape.noselection", new[] {
+                "请先在幻灯片上选中对象。\n可以按住 Shift / Ctrl 逐个点选，或用鼠标拖出选框一次选中多个。",
+                "Select objects on the slide first.\nShift- or Ctrl-click to pick several, or drag a selection box around them." } },
+            { "msg.shape.failed", new[] { "操作失败：\n{0}", "That did not work:\n{0}" } },
+            { "msg.merge.needtwo", new[] {
+                "布尔运算至少需要选中 2 个形状。\n先单击要保留格式的形状，再按住 Shift 或 Ctrl 单击其他形状。",
+                "Merging needs at least 2 selected shapes.\nClick the shape whose format you want to keep first, then Shift- or Ctrl-click the others." } },
+            { "msg.merge.grouped", new[] {
+                "组合不能直接做布尔运算。请先取消组合（Ctrl+Shift+G），再选中要运算的形状。",
+                "Groups cannot be merged. Ungroup them first (Ctrl+Shift+G), then select the shapes to merge." } },
+            { "msg.merge.failed", new[] {
+                "无法对这些对象做布尔运算：\n{0}\n\n表格、图表、SmartArt 等对象不能参与布尔运算。",
+                "These objects cannot be merged:\n{0}\n\nTables, charts, SmartArt and similar objects cannot take part in merging." } },
+
+            // ---- colour picker
+            { "picker.title", new[] { "背景颜色", "Background color" } },
+            { "picker.new", new[] { "新颜色", "New" } },
+            { "picker.current", new[] { "当前", "Current" } },
+            { "picker.hex", new[] { "十六进制", "Hex" } },
+            { "picker.palette", new[] { "常用颜色", "Colors" } },
+            { "picker.recent", new[] { "最近使用", "Recent" } },
+            { "picker.recent.empty", new[] { "用过的颜色会出现在这里", "Colors you choose will appear here" } },
+            { "picker.ok", new[] { "确定", "OK" } },
+            { "picker.cancel", new[] { "取消", "Cancel" } },
+            { "picker.close", new[] { "关闭", "Close" } },
 
             // ---- errors raised by the export code
             { "err.svg", new[] { "PowerPoint 导出的 SVG 内容无法识别。", "The SVG written by PowerPoint could not be understood." } },

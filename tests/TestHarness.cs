@@ -1,5 +1,5 @@
-// Drives the export code against a real PowerPoint instance, without the ribbon.
-// Usage: TestHarness.exe <output folder>
+// Drives the export and alignment code against a real PowerPoint instance, without the ribbon.
+// Usage: TestHarness.exe <output folder> [align]   ("align" runs only the alignment tests)
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -66,6 +66,14 @@ namespace PptSelectionExport
             outDir = Path.GetFullPath(args[0]);
             Directory.CreateDirectory(outDir);
             foreach (string f in Directory.GetFiles(outDir)) File.Delete(f);
+
+            if (args.Length > 1 && args[1] == "align")
+            {
+                app = new PowerPoint.Application();
+                try { AlignTests.Run(app); ShapeToolsTests.Run(app); }
+                finally { if (app.Presentations.Count == 0) app.Quit(); }
+                return;
+            }
 
             string png = Path.Combine(outDir, "_picture.png");
             using (var bmp = new Bitmap(240, 160))
@@ -152,6 +160,9 @@ namespace PptSelectionExport
 
                 Console.WriteLine("source untouched: slides={0} shapes={1} saved={2} bgFollow={3} open presentations={4}",
                     pres.Slides.Count, slide.Shapes.Count, pres.Saved, slide.FollowMasterBackground, app.Presentations.Count);
+
+                AlignTests.Run(app);
+                ShapeToolsTests.Run(app);
             }
             finally
             {
