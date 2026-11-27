@@ -1,14 +1,14 @@
-// Litchi-Setup.exe: a single-file installer / uninstaller for the add-in.
+// Litchi-Setup-<version>.exe: a single-file installer / uninstaller for the add-in.
 //
 // It needs no administrator rights: files go to a folder of the user's choice
 // (default %LOCALAPPDATA%\Litchi Tool) and the registration to HKEY_CURRENT_USER.
 // The add-in DLL travels inside this exe as an embedded resource. A copy of the exe is kept
 // next to it as Uninstall.exe so the add-in can be removed from Windows "Installed apps".
 //
-//   Litchi-Setup.exe                    interactive
-//   Litchi-Setup.exe /S                 install silently to the default folder
-//   Litchi-Setup.exe /S /DIR="D:\Apps\Litchi"  install silently to that folder
-//   Litchi-Setup.exe /uninstall         uninstall (add /S for silent)
+//   Litchi-Setup-1.4.1.exe                    interactive
+//   Litchi-Setup-1.4.1.exe /S                 install silently to the default folder
+//   Litchi-Setup-1.4.1.exe /S /DIR="D:\Apps\Litchi"  install silently to that folder
+//   Litchi-Setup-1.4.1.exe /uninstall         uninstall (add /S for silent)
 //
 // Exit codes: 0 = done, 1 = cancelled, 2 = PowerPoint is running (silent mode), 3 = error.
 using System;
@@ -1053,7 +1053,7 @@ namespace PptSelectionExportSetup
         private static string _previewOldVersion;
 
         /// <summary>
-        /// Renders every page of the window to PNG files (Litchi-Setup.exe /preview folder),
+        /// Renders every page of the window to PNG files (Litchi-Setup-<version>.exe /preview folder),
         /// as it looks on a computer where the add-in is not installed yet. Used for the README pictures.
         /// </summary>
         public static void RenderPreviews(string folder)

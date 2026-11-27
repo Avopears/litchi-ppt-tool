@@ -28,8 +28,8 @@
 要求：Windows，桌面版 PowerPoint（Microsoft 365 或 Office 2019 / 2021 / 2024，32 位、64 位均可）。
 不需要管理员权限。
 
-1. 下载 **[Litchi-Setup.exe](https://github.com/Avopears/litchi-ppt-tool/releases/latest/download/Litchi-Setup.exe)**
-   （也可以在 [Releases](https://github.com/Avopears/litchi-ppt-tool/releases) 页面选版本）。
+1. 打开 **[最新版 Release](https://github.com/Avopears/litchi-ppt-tool/releases/latest)**，在 *Assets* 里下载安装程序。
+   文件名带版本号，例如 `Litchi-Setup-1.4.1.exe`。
 2. 关闭 PowerPoint，运行安装程序。安装位置可以用默认的，也可以自己选文件夹。
 3. 打开 PowerPoint，插件的选项卡叫 **Litchi**，就在“视图”后面。
 
@@ -48,8 +48,8 @@
 <summary>其他安装方式</summary>
 
 - **不用 exe：** 把本仓库下载为 ZIP 并解压，关闭 PowerPoint 后双击 `安装.bat`（`卸载.bat` 用来卸载）。
-- **静默安装：** `Litchi-Setup.exe /S` 安装（加 `/DIR="D:\Tools\Litchi"` 可指定位置），
-  `Litchi-Setup.exe /uninstall /S` 卸载。
+- **静默安装：** `Litchi-Setup-<版本号>.exe /S` 安装（加 `/DIR="D:\Tools\Litchi"` 可指定位置），
+  `Litchi-Setup-<版本号>.exe /uninstall /S` 卸载。
 
 所有内容都只装给当前用户：插件复制到 `%LOCALAPPDATA%\Litchi Tool` 或你选的文件夹
 （如果那个文件夹里已有别的东西，会在其中新建 `Litchi Tool` 文件夹），注册信息写在 `HKEY_CURRENT_USER` 下。
@@ -83,7 +83,7 @@
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-会生成 `dist\PptSelectionExport.dll`（插件本体）和 `dist\Litchi-Setup.exe`（安装程序，DLL 已打包在里面）。
+会生成 `dist\PptSelectionExport.dll`（插件本体）和 `dist\Litchi-Setup-<版本号>.exe`（安装程序，DLL 已打包在里面）。
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tests\run.ps1
