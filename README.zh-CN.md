@@ -1,8 +1,8 @@
-# 选区导出（PowerPoint 插件）
+# Litchi PPT Tool
 
 [English](README.md) | **简体中文**
 
-给习惯用 PowerPoint 画图的人准备的小插件：在幻灯片上选中几个对象，点一下按钮，
+**选区导出**（PowerPoint 插件）——给习惯用 PowerPoint 画图的人准备的小工具：在幻灯片上选中几个对象，点一下按钮，
 就能把**只有这些对象**导出成 **PDF**、**SVG**、**PNG** 或 **JPG**，
 范围是刚好包住它们的最小矩形，背景可以选透明或任意纯色。
 
@@ -28,8 +28,8 @@
 要求：Windows，桌面版 PowerPoint（Microsoft 365 或 Office 2019 / 2021 / 2024，32 位、64 位均可）。
 不需要管理员权限。
 
-1. 下载 **[PptSelectionExport-Setup.exe](https://github.com/Avopears/ppt-selection-export/releases/latest/download/PptSelectionExport-Setup.exe)**
-   （也可以在 [Releases](https://github.com/Avopears/ppt-selection-export/releases) 页面选版本）。
+1. 下载 **[Litchi-Setup.exe](https://github.com/Avopears/litchi-ppt-tool/releases/latest/download/Litchi-Setup.exe)**
+   （也可以在 [Releases](https://github.com/Avopears/litchi-ppt-tool/releases) 页面选版本）。
 2. 关闭 PowerPoint，运行安装程序。安装位置可以用默认的，也可以自己选文件夹。
 3. 打开 PowerPoint，插件的选项卡叫 **Litchi**，就在“视图”后面。
 
@@ -45,8 +45,8 @@
 <summary>其他安装方式</summary>
 
 - **不用 exe：** 把本仓库下载为 ZIP 并解压，关闭 PowerPoint 后双击 `安装.bat`（`卸载.bat` 用来卸载）。
-- **静默安装：** `PptSelectionExport-Setup.exe /S` 安装（加 `/DIR="D:\Tools\Litchi"` 可指定位置），
-  `PptSelectionExport-Setup.exe /uninstall /S` 卸载。
+- **静默安装：** `Litchi-Setup.exe /S` 安装（加 `/DIR="D:\Tools\Litchi"` 可指定位置），
+  `Litchi-Setup.exe /uninstall /S` 卸载。
 
 所有内容都只装给当前用户：插件复制到 `%LOCALAPPDATA%\PptSelectionExport` 或你选的文件夹
 （如果那个文件夹里已有别的东西，会在其中新建 `PptSelectionExport` 文件夹），注册信息写在 `HKEY_CURRENT_USER` 下。
@@ -70,7 +70,7 @@
 
 已在 Windows 11 上的 Microsoft 365（64 位、中文界面、版本 16.0.20625）测试过。
 英文界面和其他 Office 版本按设计应当可用，但还没有实际测试，
-欢迎[反馈问题](https://github.com/Avopears/ppt-selection-export/issues)。
+欢迎[反馈问题](https://github.com/Avopears/litchi-ppt-tool/issues)。
 
 ## 从源码编译
 
@@ -80,7 +80,7 @@
 powershell -ExecutionPolicy Bypass -File .\build.ps1
 ```
 
-会生成 `dist\PptSelectionExport.dll`（插件本体）和 `dist\PptSelectionExport-Setup.exe`（安装程序，DLL 已打包在里面）。
+会生成 `dist\PptSelectionExport.dll`（插件本体）和 `dist\Litchi-Setup.exe`（安装程序，DLL 已打包在里面）。
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tests\run.ps1

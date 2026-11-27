@@ -1,14 +1,14 @@
-// PptSelectionExport-Setup.exe: a single-file installer / uninstaller for the add-in.
+// Litchi-Setup.exe: a single-file installer / uninstaller for the add-in.
 //
 // It needs no administrator rights: files go to a folder of the user's choice
 // (default %LOCALAPPDATA%\PptSelectionExport) and the registration to HKEY_CURRENT_USER.
 // The add-in DLL travels inside this exe as an embedded resource. A copy of the exe is kept
 // next to it as Uninstall.exe so the add-in can be removed from Windows "Installed apps".
 //
-//   PptSelectionExport-Setup.exe                    interactive
-//   PptSelectionExport-Setup.exe /S                 install silently to the default folder
-//   PptSelectionExport-Setup.exe /S /DIR="D:\Apps\Litchi"  install silently to that folder
-//   PptSelectionExport-Setup.exe /uninstall         uninstall (add /S for silent)
+//   Litchi-Setup.exe                    interactive
+//   Litchi-Setup.exe /S                 install silently to the default folder
+//   Litchi-Setup.exe /S /DIR="D:\Apps\Litchi"  install silently to that folder
+//   Litchi-Setup.exe /uninstall         uninstall (add /S for silent)
 //
 // Exit codes: 0 = done, 1 = cancelled, 2 = PowerPoint is running (silent mode), 3 = error.
 using System;
@@ -26,8 +26,8 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("PptSelectionExport Setup")]
 [assembly: AssemblyDescription("Installer for the PowerPoint add-in \"Export Selection\"")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.3.0.0")]
-[assembly: AssemblyFileVersion("1.3.0.0")]
+[assembly: AssemblyVersion("1.3.1.0")]
+[assembly: AssemblyFileVersion("1.3.1.0")]
 
 namespace PptSelectionExportSetup
 {
@@ -104,7 +104,7 @@ namespace PptSelectionExportSetup
         private const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\PptSelectionExport";
         private const string SettingsKey = @"Software\PptSelectionExport";
         private const string ManagedCategory = "{62C8FE65-4EBB-45e7-B440-6E39B2CDBF29}";
-        private const string HomePage = "https://github.com/Avopears/ppt-selection-export";
+        private const string HomePage = "https://github.com/Avopears/litchi-ppt-tool";
         private static readonly string[] ClassRoots = { @"Software\Classes", @"Software\Classes\Wow6432Node" };
 
         public static string DefaultDir
@@ -970,7 +970,7 @@ namespace PptSelectionExportSetup
         private static bool _previewFresh;
 
         /// <summary>
-        /// Renders every page of the window to PNG files (PptSelectionExport-Setup.exe /preview folder),
+        /// Renders every page of the window to PNG files (Litchi-Setup.exe /preview folder),
         /// as it looks on a computer where the add-in is not installed yet. Used for the README pictures.
         /// </summary>
         public static void RenderPreviews(string folder)

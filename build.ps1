@@ -30,7 +30,7 @@ if ($LASTEXITCODE -ne 0) { throw '编译失败。' }
 Write-Host "编译完成：$out"
 
 # 安装程序：把上面的 DLL 作为资源打进一个 exe
-$setup = Join-Path $dist 'PptSelectionExport-Setup.exe'
+$setup = Join-Path $dist 'Litchi-Setup.exe'
 & $csc /nologo /codepage:65001 /target:winexe /platform:anycpu /optimize+ /warn:4 `
     "/out:$setup" "/win32icon:$(Join-Path $root 'installer\setup.ico')" `
     /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll `
