@@ -31,8 +31,10 @@ Requirements: Windows, desktop PowerPoint from Microsoft 365 or Office 2019 / 20
 (32- or 64-bit). No administrator rights needed.
 
 1. Download **[PptSelectionExport-Setup.exe](https://github.com/Avopears/ppt-selection-export/raw/main/dist/PptSelectionExport-Setup.exe)**.
-2. Close PowerPoint and run the installer.
+2. Close PowerPoint and run the installer. You can keep the suggested location or pick your own folder.
 3. Start PowerPoint. The **Export Selection** tab is right after **View**.
+
+![The installer](docs/installer.png)
 
 The installer is not code-signed, so Windows SmartScreen may show *"Windows protected your PC"*
 the first time. Choose **More info → Run anyway**, or build the installer yourself from the
@@ -46,10 +48,12 @@ or run the installer again and choose **Uninstall**.
 
 - **Without the exe:** download this repository as a ZIP, unpack it, close PowerPoint and
   double-click `install.bat` (`uninstall.bat` removes it).
-- **Silently:** `PptSelectionExport-Setup.exe /S` installs, `PptSelectionExport-Setup.exe /uninstall /S` removes.
+- **Silently:** `PptSelectionExport-Setup.exe /S` installs (add `/DIR="D:\Tools"` to choose the folder),
+  `PptSelectionExport-Setup.exe /uninstall /S` removes.
 
-Everything is per user: the add-in is copied to `%LOCALAPPDATA%\PptSelectionExport`
-and registered under `HKEY_CURRENT_USER`.
+Everything is per user: the add-in is copied to `%LOCALAPPDATA%\PptSelectionExport` (or to a
+`PptSelectionExport` folder inside the location you choose) and registered under `HKEY_CURRENT_USER`.
+Uninstalling removes only the add-in's own files, never anything else in that location.
 </details>
 
 ## Use

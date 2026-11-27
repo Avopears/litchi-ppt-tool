@@ -27,7 +27,7 @@ $installed = Join-Path $target 'PptSelectionExport.dll'
 # 从网上下载的文件带有“来自 Internet”标记，.NET 会拒绝加载这样的 DLL，这里去掉标记
 Unblock-File -Path $installed -ErrorAction SilentlyContinue
 $asmName  = [Reflection.AssemblyName]::GetAssemblyName($installed)
-$codeBase = ([Uri]$installed).AbsoluteUri
+$codeBase = 'file:///' + $installed.Replace('\', '/')   # 不做 URL 转义，路径里有中文或空格也能加载
 
 function Set-Default([string]$key, [string]$value) {
     New-Item -Path $key -Force | Out-Null
