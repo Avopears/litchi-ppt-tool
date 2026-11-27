@@ -1,0 +1,8 @@
+# dist/PptSelectionExport.dll and dist/PptSelectionExport-Setup.exe are committed on purpose,
+# so the add-in can be installed straight from the repository without building.
+*.pdb
+*.exe
+!dist/PptSelectionExport-Setup.exe
+tests/out/
+Thumbs.db
+desktop.ini

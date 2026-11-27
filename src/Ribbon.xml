@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- {{key}} placeholders are filled from Strings.cs (Chinese or English) when the ribbon loads. -->
+<customUI xmlns="http://schemas.microsoft.com/office/2009/07/customui" onLoad="OnRibbonLoad">
+  <ribbon>
+    <tabs>
+      <tab id="tabSelExport" label="{{tab}}" insertAfterMso="TabView">
+        <group id="grpExport" label="{{grp.export}}">
+          <button id="btnPdf" label="{{pdf.label}}" size="large" getImage="GetImage" onAction="OnExportPdf"
+                  screentip="{{pdf.tip}}" supertip="{{pdf.super}}" />
+          <button id="btnSvg" label="{{svg.label}}" size="large" getImage="GetImage" onAction="OnExportSvg"
+                  screentip="{{svg.tip}}" supertip="{{svg.super}}" />
+          <button id="btnImage" label="{{img.label}}" size="large" getImage="GetImage" onAction="OnExportImage"
+                  screentip="{{img.tip}}" supertip="{{img.super}}" />
+        </group>
+        <group id="grpBackground" label="{{grp.background}}">
+          <toggleButton id="tglTransparent" label="{{transparent.label}}" size="large" getImage="GetImage"
+                        getPressed="GetPressed" onAction="OnBackgroundMode"
+                        screentip="{{transparent.label}}" supertip="{{transparent.super}}" />
+          <splitButton id="splColor" size="large">
+            <toggleButton id="tglColor" label="{{color.label}}" getImage="GetImage"
+                          getPressed="GetPressed" onAction="OnBackgroundMode"
+                          screentip="{{color.tip}}" getSupertip="GetColorSupertip" />
+            <menu id="mnuColor" itemSize="normal">
+              <button id="clrWhite" tag="FFFFFF" label="{{color.white}}" getImage="GetImage" onAction="OnPresetColor" />
+              <button id="clrLightGray" tag="F2F2F2" label="{{color.lightgray}}" getImage="GetImage" onAction="OnPresetColor" />
+              <button id="clrBlack" tag="000000" label="{{color.black}}" getImage="GetImage" onAction="OnPresetColor" />
+              <button id="clrCream" tag="FFF8E1" label="{{color.cream}}" getImage="GetImage" onAction="OnPresetColor" />
+              <button id="clrPaleBlue" tag="E8F1FB" label="{{color.paleblue}}" getImage="GetImage" onAction="OnPresetColor" />
+              <menuSeparator id="sepColor" />
+              <button id="btnMoreColors" label="{{color.more}}" getImage="GetImage" onAction="OnPickColor" />
+            </menu>
+          </splitButton>
+        </group>
+        <group id="grpOptions" label="{{grp.options}}">
+          <dropDown id="ddDpi" label="{{dpi.label}}" sizeString="0000 DPI" getSelectedItemIndex="GetDpiIndex" onAction="OnDpiChanged"
+                    screentip="{{dpi.label}}" supertip="{{dpi.super}}">
+            <item id="dpi96" label="96 DPI" />
+            <item id="dpi150" label="150 DPI" />
+            <item id="dpi200" label="200 DPI" />
+            <item id="dpi300" label="300 DPI" />
+            <item id="dpi600" label="600 DPI" />
+          </dropDown>
+          <checkBox id="chkOpenFolder" label="{{openfolder.label}}" getPressed="GetPressed" onAction="OnOption"
+                    screentip="{{openfolder.label}}" supertip="{{openfolder.super}}" />
+        </group>
+      </tab>
+    </tabs>
+  </ribbon>
+</customUI>
