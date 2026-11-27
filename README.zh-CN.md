@@ -51,8 +51,8 @@
 - **静默安装：** `Litchi-Setup.exe /S` 安装（加 `/DIR="D:\Tools\Litchi"` 可指定位置），
   `Litchi-Setup.exe /uninstall /S` 卸载。
 
-所有内容都只装给当前用户：插件复制到 `%LOCALAPPDATA%\PptSelectionExport` 或你选的文件夹
-（如果那个文件夹里已有别的东西，会在其中新建 `PptSelectionExport` 文件夹），注册信息写在 `HKEY_CURRENT_USER` 下。
+所有内容都只装给当前用户：插件复制到 `%LOCALAPPDATA%\Litchi Tool` 或你选的文件夹
+（如果那个文件夹里已有别的东西，会在其中新建 `Litchi Tool` 文件夹），注册信息写在 `HKEY_CURRENT_USER` 下。
 卸载时只删除插件自己的文件，不会动该位置里的其他东西。
 </details>
 

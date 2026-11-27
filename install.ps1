@@ -1,5 +1,5 @@
 ﻿# 安装“选区导出”插件（仅当前用户，不需要管理员权限）。
-# 做两件事：1) 把 DLL 复制到 %LOCALAPPDATA%\PptSelectionExport
+# 做两件事：1) 把 DLL 复制到 %LOCALAPPDATA%\Litchi Tool
 #           2) 在当前用户的注册表里登记这个 COM 加载项，让 PowerPoint 启动时加载它
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -20,7 +20,7 @@ if (-not (Test-Path $dll)) {
     if (-not (Test-Path $dll)) { throw "编译失败，找不到 $dll / Build failed." }
 }
 
-$target = Join-Path $env:LOCALAPPDATA 'PptSelectionExport'
+$target = Join-Path $env:LOCALAPPDATA 'Litchi Tool'
 New-Item -ItemType Directory -Force $target | Out-Null
 Copy-Item $dll $target -Force
 $installed = Join-Path $target 'PptSelectionExport.dll'

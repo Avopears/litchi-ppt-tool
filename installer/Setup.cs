@@ -1,7 +1,7 @@
 // Litchi-Setup.exe: a single-file installer / uninstaller for the add-in.
 //
 // It needs no administrator rights: files go to a folder of the user's choice
-// (default %LOCALAPPDATA%\PptSelectionExport) and the registration to HKEY_CURRENT_USER.
+// (default %LOCALAPPDATA%\Litchi Tool) and the registration to HKEY_CURRENT_USER.
 // The add-in DLL travels inside this exe as an embedded resource. A copy of the exe is kept
 // next to it as Uninstall.exe so the add-in can be removed from Windows "Installed apps".
 //
@@ -26,8 +26,8 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("PptSelectionExport Setup")]
 [assembly: AssemblyDescription("Installer for the PowerPoint add-in \"Export Selection\"")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.4.0.0")]
-[assembly: AssemblyFileVersion("1.4.0.0")]
+[assembly: AssemblyVersion("1.4.1.0")]
+[assembly: AssemblyFileVersion("1.4.1.0")]
 
 namespace PptSelectionExportSetup
 {
@@ -97,7 +97,7 @@ namespace PptSelectionExportSetup
     {
         private const string ProgId = "PptSelectionExport.Connect";
         private const string Clsid = "{A0181EA2-7061-43C3-9086-B72894478235}";
-        private const string FolderName = "PptSelectionExport";
+        private const string FolderName = "Litchi Tool";
         private const string DllName = "PptSelectionExport.dll";
         private const string UninstallerName = "Uninstall.exe";
         private const string AddinKey = @"Software\Microsoft\Office\PowerPoint\Addins\" + ProgId;
@@ -823,7 +823,7 @@ namespace PptSelectionExportSetup
         {
             using (var dlg = new FolderBrowserDialog())
             {
-                dlg.Description = T("选择安装位置（文件夹里已有其他内容时，会在其中新建 PptSelectionExport 文件夹）", "Choose where to install (if the folder already contains other things, a PptSelectionExport folder is created inside it)");
+                dlg.Description = T("选择安装位置（文件夹里已有其他内容时，会在其中新建 Litchi Tool 文件夹）", "Choose where to install (if the folder already contains other things, a Litchi Tool folder is created inside it)");
                 dlg.ShowNewFolderButton = true;
                 try
                 {
@@ -1060,7 +1060,7 @@ namespace PptSelectionExportSetup
         {
             Directory.CreateDirectory(folder);
             _previewFresh = true;
-            const string samplePath = @"D:\Tools\PptSelectionExport";
+            const string samplePath = @"D:\Tools\Litchi Tool";
             foreach (bool uninstall in new[] { false, true })
             {
                 using (var f = new SetupForm(uninstall))

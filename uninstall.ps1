@@ -20,7 +20,9 @@ foreach ($k in $keys) {
     if (Test-Path $k) { Remove-Item -Path $k -Recurse -Force }
 }
 
-$target = Join-Path $env:LOCALAPPDATA 'PptSelectionExport'
-if (Test-Path $target) { Remove-Item -Path $target -Recurse -Force }
+foreach ($name in 'Litchi Tool', 'PptSelectionExport') {   # the second is where versions before 1.4.1 lived
+    $target = Join-Path $env:LOCALAPPDATA $name
+    if (Test-Path $target) { Remove-Item -Path $target -Recurse -Force }
+}
 
 Write-Host '已卸载。 / Uninstalled.' -ForegroundColor Green

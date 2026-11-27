@@ -56,8 +56,8 @@ or run the installer again and choose **Uninstall**.
 - **Silently:** `Litchi-Setup.exe /S` installs (add `/DIR="D:\Tools\Litchi"` to choose the folder),
   `Litchi-Setup.exe /uninstall /S` removes.
 
-Everything is per user: the add-in is copied to `%LOCALAPPDATA%\PptSelectionExport` or to the
-folder you choose (if that folder already contains other things, a `PptSelectionExport` folder is
+Everything is per user: the add-in is copied to `%LOCALAPPDATA%\Litchi Tool` or to the
+folder you choose (if that folder already contains other things, a `Litchi Tool` folder is
 created inside it) and registered under `HKEY_CURRENT_USER`.
 Uninstalling removes only the add-in's own files, never anything else in that location.
 </details>
