@@ -34,7 +34,7 @@ namespace PptSelectionExport
         private static readonly Dictionary<string, string[]> Table = new Dictionary<string, string[]>
         {
             // ---- ribbon
-            { "tab", new[] { "选区导出", "Export Selection" } },
+            { "tab", new[] { "Litchi", "Litchi" } },
             { "grp.export", new[] { "导出选中内容", "Export selection" } },
             { "pdf.label", new[] { "导出 PDF", "Export PDF" } },
             { "pdf.tip", new[] { "把选中内容导出为 PDF", "Export the selection as PDF" } },

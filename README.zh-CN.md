@@ -6,7 +6,7 @@
 就能把**只有这些对象**导出成 **PDF**、**SVG**、**PNG** 或 **JPG**，
 范围是刚好包住它们的最小矩形，背景可以选透明或任意纯色。
 
-![PowerPoint 里的“选区导出”选项卡](docs/ribbon.jpg)
+![插件在 PowerPoint 里的“Litchi”选项卡](docs/ribbon.jpg)
 
 （中文版 Office 显示中文界面，其他语言的 Office 显示英文界面。）
 
@@ -28,9 +28,10 @@
 要求：Windows，桌面版 PowerPoint（Microsoft 365 或 Office 2019 / 2021 / 2024，32 位、64 位均可）。
 不需要管理员权限。
 
-1. 下载 **[PptSelectionExport-Setup.exe](https://github.com/Avopears/ppt-selection-export/raw/main/dist/PptSelectionExport-Setup.exe)**。
+1. 下载 **[PptSelectionExport-Setup.exe](https://github.com/Avopears/ppt-selection-export/releases/latest/download/PptSelectionExport-Setup.exe)**
+   （也可以在 [Releases](https://github.com/Avopears/ppt-selection-export/releases) 页面选版本）。
 2. 关闭 PowerPoint，运行安装程序。安装位置可以用默认的，也可以自己选文件夹。
-3. 打开 PowerPoint，“视图”选项卡后面就是 **选区导出**。
+3. 打开 PowerPoint，插件的选项卡叫 **Litchi**，就在“视图”后面。
 
 ![安装程序](docs/installer.png)
 
@@ -44,11 +45,11 @@
 <summary>其他安装方式</summary>
 
 - **不用 exe：** 把本仓库下载为 ZIP 并解压，关闭 PowerPoint 后双击 `安装.bat`（`卸载.bat` 用来卸载）。
-- **静默安装：** `PptSelectionExport-Setup.exe /S` 安装（加 `/DIR="D:\Tools"` 可指定位置），
+- **静默安装：** `PptSelectionExport-Setup.exe /S` 安装（加 `/DIR="D:\Tools\Litchi"` 可指定位置），
   `PptSelectionExport-Setup.exe /uninstall /S` 卸载。
 
-所有内容都只装给当前用户：插件复制到 `%LOCALAPPDATA%\PptSelectionExport`
-（或你所选位置下的 `PptSelectionExport` 文件夹），注册信息写在 `HKEY_CURRENT_USER` 下。
+所有内容都只装给当前用户：插件复制到 `%LOCALAPPDATA%\PptSelectionExport` 或你选的文件夹
+（如果那个文件夹里已有别的东西，会在其中新建 `PptSelectionExport` 文件夹），注册信息写在 `HKEY_CURRENT_USER` 下。
 卸载时只删除插件自己的文件，不会动该位置里的其他东西。
 </details>
 

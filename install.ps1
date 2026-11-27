@@ -61,5 +61,5 @@ Set-ItemProperty -Path $addin -Name 'Description' -Value '把选中的对象按�
 Set-ItemProperty -Path $addin -Name 'LoadBehavior' -Value 3 -Type DWord
 
 Write-Host "安装完成 / Installed: $installed" -ForegroundColor Green
-Write-Host '现在打开 PowerPoint，功能区“视图”后面会出现“选区导出”选项卡。'
-Write-Host 'Start PowerPoint: the "Export Selection" tab appears after the View tab.'
+Write-Host '现在打开 PowerPoint，功能区“视图”后面会出现“Litchi”选项卡。'
+Write-Host 'Start PowerPoint: the "Litchi" tab appears after the View tab.'

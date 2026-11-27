@@ -14,8 +14,8 @@ using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 [assembly: AssemblyTitle("PptSelectionExport")]
 [assembly: AssemblyDescription("PowerPoint add-in: export the selected objects as PDF / SVG / PNG / JPG")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.2.0.0")]
-[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyVersion("1.3.0.0")]
+[assembly: AssemblyFileVersion("1.3.0.0")]
 [assembly: ComVisible(false)]
 
 namespace PptSelectionExport
@@ -34,7 +34,7 @@ namespace PptSelectionExport
         [DispId(5)] void OnBeginShutdown([In, MarshalAs(UnmanagedType.SafeArray, SafeArraySubType = VarEnum.VT_VARIANT)] ref Array custom);
     }
 
-    /// <summary>The add-in: owns the "Export Selection" ribbon tab and reacts to its buttons.</summary>
+    /// <summary>The add-in: owns the "Litchi" ribbon tab and reacts to its buttons.</summary>
     [ComVisible(true)]
     [Guid("A0181EA2-7061-43C3-9086-B72894478235")]
     [ProgId("PptSelectionExport.Connect")]

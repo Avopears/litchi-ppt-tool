@@ -7,7 +7,7 @@ Select some objects on a slide, click one button, and get **just those objects**
 **PDF**, **SVG**, **PNG** or **JPG** — cropped to the smallest rectangle around them,
 with a transparent or solid-colour background.
 
-![The "Export Selection" tab in PowerPoint](docs/ribbon.jpg)
+![The add-in's "Litchi" tab in PowerPoint](docs/ribbon.jpg)
 
 *(The interface is Chinese on a Chinese edition of Office and English on every other edition.)*
 
@@ -30,9 +30,10 @@ This add-in does it in one click:
 Requirements: Windows, desktop PowerPoint from Microsoft 365 or Office 2019 / 2021 / 2024
 (32- or 64-bit). No administrator rights needed.
 
-1. Download **[PptSelectionExport-Setup.exe](https://github.com/Avopears/ppt-selection-export/raw/main/dist/PptSelectionExport-Setup.exe)**.
+1. Download **[PptSelectionExport-Setup.exe](https://github.com/Avopears/ppt-selection-export/releases/latest/download/PptSelectionExport-Setup.exe)**
+   (or pick a version on the [Releases](https://github.com/Avopears/ppt-selection-export/releases) page).
 2. Close PowerPoint and run the installer. You can keep the suggested location or pick your own folder.
-3. Start PowerPoint. The **Export Selection** tab is right after **View**.
+3. Start PowerPoint. The add-in's tab is called **Litchi** and sits right after **View**.
 
 ![The installer](docs/installer.png)
 
@@ -48,11 +49,12 @@ or run the installer again and choose **Uninstall**.
 
 - **Without the exe:** download this repository as a ZIP, unpack it, close PowerPoint and
   double-click `install.bat` (`uninstall.bat` removes it).
-- **Silently:** `PptSelectionExport-Setup.exe /S` installs (add `/DIR="D:\Tools"` to choose the folder),
+- **Silently:** `PptSelectionExport-Setup.exe /S` installs (add `/DIR="D:\Tools\Litchi"` to choose the folder),
   `PptSelectionExport-Setup.exe /uninstall /S` removes.
 
-Everything is per user: the add-in is copied to `%LOCALAPPDATA%\PptSelectionExport` (or to a
-`PptSelectionExport` folder inside the location you choose) and registered under `HKEY_CURRENT_USER`.
+Everything is per user: the add-in is copied to `%LOCALAPPDATA%\PptSelectionExport` or to the
+folder you choose (if that folder already contains other things, a `PptSelectionExport` folder is
+created inside it) and registered under `HKEY_CURRENT_USER`.
 Uninstalling removes only the add-in's own files, never anything else in that location.
 </details>
 

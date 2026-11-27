@@ -7,7 +7,7 @@
 //
 //   PptSelectionExport-Setup.exe                    interactive
 //   PptSelectionExport-Setup.exe /S                 install silently to the default folder
-//   PptSelectionExport-Setup.exe /S /DIR="D:\Apps"  install silently to D:\Apps\PptSelectionExport
+//   PptSelectionExport-Setup.exe /S /DIR="D:\Apps\Litchi"  install silently to that folder
 //   PptSelectionExport-Setup.exe /uninstall         uninstall (add /S for silent)
 //
 // Exit codes: 0 = done, 1 = cancelled, 2 = PowerPoint is running (silent mode), 3 = error.
@@ -26,8 +26,8 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("PptSelectionExport Setup")]
 [assembly: AssemblyDescription("Installer for the PowerPoint add-in \"Export Selection\"")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.2.0.0")]
-[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyVersion("1.3.0.0")]
+[assembly: AssemblyFileVersion("1.3.0.0")]
 
 namespace PptSelectionExportSetup
 {
@@ -156,9 +156,10 @@ namespace PptSelectionExportSetup
         }
 
         /// <summary>
-        /// Turns what the user typed or picked into the real target folder. The add-in always gets a
-        /// folder of its own, so picking "D:\Tools" installs to "D:\Tools\PptSelectionExport" - and
-        /// uninstalling can never touch anything else in D:\Tools.
+        /// Turns what the user typed or picked into the real target folder. A folder that is new,
+        /// empty, or already holds the add-in is used as it is. A folder with other things in it
+        /// (say "D:\Tools") gets a subfolder, "D:\Tools\PptSelectionExport", so the add-in's files
+        /// never mix with someone else's.
         /// </summary>
         public static string NormalizeDir(string input)
         {
@@ -168,8 +169,24 @@ namespace PptSelectionExportSetup
                 throw new ArgumentException(Program.T("安装位置需要是完整路径，例如 D:\\Tools。", "The install folder must be a full path, for example D:\\Tools."));
             p = Path.GetFullPath(p).TrimEnd('\\', '/');
             if (p.EndsWith(":", StringComparison.Ordinal)) p += "\\";      // a drive root such as "D:"
-            if (!string.Equals(Path.GetFileName(p), FolderName, StringComparison.OrdinalIgnoreCase)) p = Path.Combine(p, FolderName);
+            if (!string.Equals(Path.GetFileName(p), FolderName, StringComparison.OrdinalIgnoreCase) && !IsOursOrEmpty(p)) p = Path.Combine(p, FolderName);
             return p;
+        }
+
+        private static bool IsOursOrEmpty(string dir)
+        {
+            try
+            {
+                if (Path.GetPathRoot(dir).TrimEnd('\\').Equals(dir.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) return false;   // never a drive root
+                if (!Directory.Exists(dir)) return !File.Exists(dir);
+                foreach (string entry in Directory.GetFileSystemEntries(dir))
+                {
+                    string name = Path.GetFileName(entry);
+                    if (!name.Equals(DllName, StringComparison.OrdinalIgnoreCase) && !name.Equals(UninstallerName, StringComparison.OrdinalIgnoreCase)) return false;
+                }
+                return true;
+            }
+            catch { return false; }
         }
 
         private static bool SamePath(string a, string b)
@@ -697,8 +714,8 @@ namespace PptSelectionExportSetup
                 _secondary.Text = done ? T("打开 PowerPoint", "Open PowerPoint") : T("卸载", "Uninstall");
                 _secondary.Visible = done || (start && installed);
                 _doneTitle.Text = T("安装完成", "Installed");
-                _doneText.Text = T("打开 PowerPoint，在“视图”选项卡后面可以找到“选区导出”。\n先在幻灯片上选中对象，再点导出按钮。",
-                                   "Start PowerPoint: the Export Selection tab appears after the View tab.\nSelect objects on a slide, then click one of the export buttons.");
+                _doneText.Text = T("打开 PowerPoint，在“视图”选项卡后面可以找到“Litchi”选项卡。\n先在幻灯片上选中对象，再点导出按钮。",
+                                   "Start PowerPoint: the Litchi tab appears after the View tab.\nSelect objects on a slide, then click one of the export buttons.");
             }
             LayoutButtons();
             Invalidate();
@@ -729,7 +746,7 @@ namespace PptSelectionExportSetup
         {
             using (var dlg = new FolderBrowserDialog())
             {
-                dlg.Description = T("选择安装位置（会在其中创建 PptSelectionExport 文件夹）", "Choose where to install (a PptSelectionExport folder is created inside)");
+                dlg.Description = T("选择安装位置（文件夹里已有其他内容时，会在其中新建 PptSelectionExport 文件夹）", "Choose where to install (if the folder already contains other things, a PptSelectionExport folder is created inside it)");
                 dlg.ShowNewFolderButton = true;
                 try
                 {
