@@ -29,6 +29,12 @@ Unblock-File -Path $installed -ErrorAction SilentlyContinue
 $asmName  = [Reflection.AssemblyName]::GetAssemblyName($installed)
 $codeBase = 'file:///' + $installed.Replace('\', '/')   # 不做 URL 转义，路径里有中文或空格也能加载
 
+# 先把旧版本的登记清干净，再写入新的
+foreach ($old in "HKCU:\Software\Microsoft\Office\PowerPoint\Addins\$progId", "HKCU:\Software\Classes\$progId",
+                 "HKCU:\Software\Classes\CLSID\$clsid", "HKCU:\Software\Classes\Wow6432Node\CLSID\$clsid") {
+    if (Test-Path $old) { Remove-Item -Path $old -Recurse -Force }
+}
+
 function Set-Default([string]$key, [string]$value) {
     New-Item -Path $key -Force | Out-Null
     Set-Item -Path $key -Value $value

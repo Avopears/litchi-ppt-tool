@@ -26,8 +26,8 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("PptSelectionExport Setup")]
 [assembly: AssemblyDescription("Installer for the PowerPoint add-in \"Export Selection\"")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.3.1.0")]
-[assembly: AssemblyFileVersion("1.3.1.0")]
+[assembly: AssemblyVersion("1.4.0.0")]
+[assembly: AssemblyFileVersion("1.4.0.0")]
 
 namespace PptSelectionExportSetup
 {
@@ -204,6 +204,12 @@ namespace PptSelectionExportSetup
             string previous = InstalledDir();
             return new Action[]
             {
+                delegate   // an older copy is removed completely first, so nothing of it can linger:
+                {          // its registration, its "Installed apps" entry and its files (saved settings stay)
+                    if (previous == null && !IsInstalled()) return;
+                    RemoveRegistration();
+                    if (previous != null && Directory.Exists(previous)) RemovePreviousFiles(previous, dir);
+                },
                 delegate   // files
                 {
                     try { Directory.CreateDirectory(dir); }
@@ -233,7 +239,6 @@ namespace PptSelectionExportSetup
                         File.Copy(self, uninstaller, true);
                         try { DeleteFile(uninstaller + ":Zone.Identifier"); } catch { }   // drop the "downloaded from the Internet" mark
                     }
-                    if (previous != null && Directory.Exists(previous) && !SamePath(previous, dir)) RemoveFiles(previous);
                 },
                 delegate   // COM registration of the managed class (what "regasm /codebase" writes), per user,
                 {          // in the 64-bit and the 32-bit view so either edition of Office finds it
@@ -296,9 +301,74 @@ namespace PptSelectionExportSetup
             };
         }
 
+        /// <summary>What to show while each of <see cref="InstallSteps"/> runs.</summary>
+        public static string[] InstallLabels()
+        {
+            bool upgrade = IsInstalled() || InstalledDir() != null;
+            return new[]
+            {
+                upgrade ? Program.T("正在卸载旧版本…", "Removing the previous version…") : Program.T("正在准备…", "Preparing…"),
+                Program.T("正在复制文件…", "Copying files…"),
+                Program.T("正在注册插件…", "Registering the add-in…"),
+                Program.T("正在注册插件…", "Registering the add-in…"),
+                Program.T("正在完成安装…", "Finishing…")
+            };
+        }
+
         public static void Install(string dir)
         {
             foreach (Action step in InstallSteps(dir)) step();
+        }
+
+        /// <summary>Version of the copy that is installed now, e.g. "1.3.0", or null when unknown.</summary>
+        public static string InstalledVersion()
+        {
+            try
+            {
+                using (RegistryKey k = Registry.CurrentUser.OpenSubKey(UninstallKey))
+                {
+                    string v = k == null ? null : k.GetValue("DisplayVersion") as string;
+                    if (!string.IsNullOrEmpty(v)) return v;
+                }
+                using (RegistryKey k = Registry.CurrentUser.OpenSubKey(@"Software\Classes\CLSID\" + Clsid + @"\InprocServer32"))
+                {
+                    string asm = k == null ? null : k.GetValue("Assembly") as string;
+                    if (asm != null)
+                    {
+                        System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(asm, @"Version=(\d+\.\d+\.\d+)");
+                        if (m.Success) return m.Groups[1].Value;
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        /// <summary>Everything in the registry that makes PowerPoint and Windows know the add-in (not its saved settings).</summary>
+        private static void RemoveRegistration()
+        {
+            Registry.CurrentUser.DeleteSubKeyTree(AddinKey, false);
+            Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\" + ProgId, false);
+            foreach (string root in ClassRoots) Registry.CurrentUser.DeleteSubKeyTree(root + @"\CLSID\" + Clsid, false);
+            Registry.CurrentUser.DeleteSubKeyTree(UninstallKey, false);
+        }
+
+        /// <summary>
+        /// Deletes the files of the copy being replaced. Its folder goes too when the new copy
+        /// is installed somewhere else and nothing else is left in the old one.
+        /// </summary>
+        private static void RemovePreviousFiles(string previous, string target)
+        {
+            try { File.Delete(Path.Combine(previous, DllName)); } catch { }
+            string oldUninstaller = Path.Combine(previous, UninstallerName);
+            if (!SamePath(Assembly.GetExecutingAssembly().Location, oldUninstaller))
+            {
+                try { File.Delete(oldUninstaller); } catch { }
+            }
+            if (!SamePath(previous, target))
+            {
+                try { Directory.Delete(previous, false); } catch { }
+            }
         }
 
         private static void SetDefault(string subKey, string value)
@@ -316,19 +386,16 @@ namespace PptSelectionExportSetup
             string dir = InstalledDir() ?? DefaultDir;
             return new Action[]
             {
-                delegate
-                {
-                    Registry.CurrentUser.DeleteSubKeyTree(AddinKey, false);
-                    Registry.CurrentUser.DeleteSubKeyTree(@"Software\Classes\" + ProgId, false);
-                    foreach (string root in ClassRoots) Registry.CurrentUser.DeleteSubKeyTree(root + @"\CLSID\" + Clsid, false);
-                },
-                delegate
-                {
-                    Registry.CurrentUser.DeleteSubKeyTree(SettingsKey, false);
-                    Registry.CurrentUser.DeleteSubKeyTree(UninstallKey, false);
-                },
+                delegate { RemoveRegistration(); },
+                delegate { Registry.CurrentUser.DeleteSubKeyTree(SettingsKey, false); },
                 delegate { if (Directory.Exists(dir)) RemoveFiles(dir); }
             };
+        }
+
+        public static string[] UninstallLabels()
+        {
+            string s = Program.T("正在卸载…", "Removing…");
+            return new[] { s, s, s };
         }
 
         public static void Uninstall()
@@ -610,7 +677,7 @@ namespace PptSelectionExportSetup
             AddLabel(_subtitle, 114, 78, 440, 22, Ui.Font(9.5f, FontStyle.Regular), Ui.TextSoft);
             AddLabel(_desc, 40, 124, 540, 48, Ui.Font(10f, FontStyle.Regular), Color.FromArgb(60, 60, 60));
             AddLabel(_pathCaption, 40, 228, 540, 20, Ui.Font(9f, FontStyle.Regular), Ui.TextSoft);
-            AddLabel(_note, 40, 294, 540, 20, Ui.Font(9f, FontStyle.Regular), Ui.TextSoft);
+            AddLabel(_note, 40, 294, 540, 38, Ui.Font(9f, FontStyle.Regular), Ui.TextSoft);
             AddLabel(_status, 40, 236, 540, 22, Ui.Font(10f, FontStyle.Regular), Ui.Text);
             AddLabel(_doneTitle, 92, 132, 480, 34, Ui.Font(15f, FontStyle.Bold), Ui.Text);
             AddLabel(_doneText, 40, 190, 540, 80, Ui.Font(10f, FontStyle.Regular), Color.FromArgb(60, 60, 60));
@@ -669,7 +736,7 @@ namespace PptSelectionExportSetup
         private void ShowPage(Page page)
         {
             _page = page;
-            bool installed = !_previewFresh && Installer.IsInstalled();
+            bool installed = _previewOldVersion != null || (!_previewFresh && Installer.IsInstalled());
             _title.Text = T("选区导出", "Export Selection");
             _subtitle.Text = T("PowerPoint 插件", "Add-in for PowerPoint") + "  ·  v" + Installer.Version;
 
@@ -708,9 +775,19 @@ namespace PptSelectionExportSetup
                 _desc.Text = T("把幻灯片上选中的对象导出为图片或矢量图，范围是刚好包住它们的最小矩形，背景可选透明或纯色。",
                                "Export the objects you select on a slide as pictures or vector graphics, cropped to the smallest rectangle around them, with a transparent or solid background.");
                 _pathCaption.Text = T("安装位置", "Install location");
-                _note.Text = T("只为当前用户安装，不需要管理员权限。", "Installs for the current user only. No administrator rights needed.");
+                string old = _previewOldVersion ?? (installed ? Installer.InstalledVersion() : null);
+                bool sameVersion = old == Installer.Version;
+                if (!installed)
+                    _note.Text = T("只为当前用户安装，不需要管理员权限。", "Installs for the current user only. No administrator rights needed.");
+                else if (old == null)
+                    _note.Text = T("这台电脑上已经装有旧版本，安装时会先把它卸载干净。", "An earlier copy is installed. It is removed completely before this one is installed.");
+                else if (sameVersion)
+                    _note.Text = T("已安装 " + old + "。重新安装时会先把它卸载干净。", "Version " + old + " is installed. It is removed completely before reinstalling.");
+                else
+                    _note.Text = T("已安装 " + old + "。升级时会先把它卸载干净，再安装 " + Installer.Version + "；你的设置会保留。",
+                                   "Version " + old + " is installed. It is removed completely before " + Installer.Version + " is installed; your settings are kept.");
                 _status.Text = T("正在安装…", "Installing…");
-                _primary.Text = done ? T("完成", "Finish") : installed ? T("重新安装", "Reinstall") : T("安装", "Install");
+                _primary.Text = done ? T("完成", "Finish") : !installed ? T("安装", "Install") : sameVersion || old == null ? T("重新安装", "Reinstall") : T("升级", "Upgrade");
                 _secondary.Text = done ? T("打开 PowerPoint", "Open PowerPoint") : T("卸载", "Uninstall");
                 _secondary.Visible = done || (start && installed);
                 _doneTitle.Text = T("安装完成", "Installed");
@@ -779,18 +856,23 @@ namespace PptSelectionExportSetup
                 return;
             }
 
+            _labels = _uninstall ? Installer.UninstallLabels() : Installer.InstallLabels();
             _steps = _uninstall ? Installer.UninstallSteps() : Installer.InstallSteps(dir);
             _step = 0;
             _failed = false;
             ShowPage(Page.Working);
+            _status.Text = _labels[0];
             _progress.Value = 0.06f;
             _timer.Start();
         }
+        private string[] _labels;
 
         private void RunNextStep()
         {
             if (_step < _steps.Length)
             {
+                _status.Text = _labels[Math.Min(_step, _labels.Length - 1)];
+                _status.Update();
                 try { _steps[_step](); }
                 catch (Exception ex)
                 {
@@ -968,6 +1050,7 @@ namespace PptSelectionExportSetup
         // ------------------------------------------------------------------ developer aid
 
         private static bool _previewFresh;
+        private static string _previewOldVersion;
 
         /// <summary>
         /// Renders every page of the window to PNG files (Litchi-Setup.exe /preview folder),
@@ -1004,6 +1087,27 @@ namespace PptSelectionExportSetup
                     f.Close();
                 }
             }
+
+            // the start page as someone with an older version sees it
+            _previewOldVersion = "1.3.0";
+            using (var f = new SetupForm(false))
+            {
+                f.StartPosition = FormStartPosition.Manual;
+                f.Location = new Point(-5000, -5000);
+                f.ShowInTaskbar = false;
+                f._path.Box.Text = samplePath;
+                f.Show();
+                f.ShowPage(Page.Start);
+                f.ActiveControl = null;
+                Application.DoEvents();
+                using (var bmp = new Bitmap(f.Width, f.Height))
+                {
+                    f.DrawToBitmap(bmp, new Rectangle(0, 0, f.Width, f.Height));
+                    bmp.Save(Path.Combine(folder, "install-upgrade.png"));
+                }
+                f.Close();
+            }
+            _previewOldVersion = null;
         }
     }
 }

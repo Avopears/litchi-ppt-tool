@@ -41,6 +41,10 @@ The installer is not code-signed, so Windows SmartScreen may show *"Windows prot
 the first time. Choose **More info → Run anyway**, or build the installer yourself from the
 source (see below) if you prefer.
 
+**Upgrading:** just run the new installer and click **Upgrade**. It first removes the installed
+version completely (its files and its registration) and then installs the new one; your saved
+settings are kept.
+
 To remove it: Windows **Settings → Apps → Installed apps → Export Selection for PowerPoint → Uninstall**,
 or run the installer again and choose **Uninstall**.
 
