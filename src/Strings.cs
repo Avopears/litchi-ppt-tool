@@ -178,6 +178,19 @@ namespace PptSelectionExport
             { "cap.round", new[] { "圆", "Round" } },
             { "cap.flat", new[] { "平", "Flat" } },
 
+            // ---- ribbon: matrix layout and cut
+            { "grp.matrix", new[] { "矩阵", "Matrix" } },
+            { "matrix.layout.label", new[] { "矩阵布局", "Matrix Layout" } },
+            { "matrix.layout.tip", new[] { "把选中的对象排成几行几列", "Arrange the selected objects in rows and columns" } },
+            { "matrix.layout.super", new[] {
+                "把选中的几个对象排成矩阵：填横向个数、纵向个数，以及横向、纵向间距（厘米）。改数值时幻灯片上会跟着变，点“取消”恢复原样。\n\n每一列和它里面最宽的对象一样宽，每一行和最高的对象一样高，对象在各自的格子里居中；间距是列与列、行与行之间的空隙。矩阵从这些对象原来占据范围的左上角开始排，默认按选中的先后顺序填。",
+                "Arranges the selected objects as a matrix: how many across, how many down, and the horizontal and vertical gaps (in centimetres). The slide follows while you change the values; Cancel puts everything back.\n\nA column is as wide as its widest object and a row as high as its highest; each object sits in the middle of its cell, and the gaps are the space between columns and between rows. The matrix starts at the top left corner of the area the objects occupied and is filled in the order you selected them." } },
+            { "matrix.cut.label", new[] { "矩阵裁剪", "Matrix Cut" } },
+            { "matrix.cut.tip", new[] { "把一张图片或一个形状切成几行几列的小块", "Cut one picture or one shape into rows and columns of pieces" } },
+            { "matrix.cut.super", new[] {
+                "把选中的一张图片或一个封闭形状，按横向个数 × 纵向个数切成小块，每块都是独立的对象，拼在一起和原来一样。切完后小块处于选中状态，可以接着用“矩阵布局”拉开间距。\n\n图片的每一块仍然是图片（共用同一份图像，文件不会变大）。形状是用“相交”切出来的：保留填充和轮廓，形状没覆盖到的格子不会产生小块，形状上的文字切不开会被去掉。一次 Ctrl+Z 可以撤回。",
+                "Cuts the selected picture or closed shape into pieces, so many across by so many down. Each piece is an object of its own, and together they look like the original. The pieces are selected afterwards, so Matrix Layout can spread them apart.\n\nEach piece of a picture is still a picture (they share one image, so the file does not grow). A shape is cut with Intersect: fill and outline are kept, cells the shape does not reach give no piece, and text on the shape cannot be cut and is left out. One Ctrl+Z takes it back." } },
+
             // ---- ribbon: slide size
             { "grp.slide", new[] { "幻灯片", "Slide" } },
             { "size.label", new[] { "设置尺寸", "Slide Size" } },
@@ -270,6 +283,30 @@ namespace PptSelectionExport
             { "err.cap.copy", new[] {
                 "读不了演示文稿的临时副本（设置了打开密码的演示文稿不支持这一项）。",
                 "The temporary copy of the presentation could not be read (presentations with a password to open are not supported here)." } },
+
+            // ---- matrix layout and cut
+            { "matrix.layout.title", new[] { "矩阵布局", "Matrix layout" } },
+            { "matrix.cut.title", new[] { "矩阵裁剪", "Matrix cut" } },
+            { "matrix.selected", new[] { "已选中 {0} 个对象，改数值时幻灯片上会跟着变。", "{0} objects selected. The slide follows as you change the values." } },
+            { "matrix.cut.sub", new[] { "把选中的图片或形状切成小块，每块都是独立的对象。", "Cuts the selected picture or shape into pieces, each an object of its own." } },
+            { "matrix.columns", new[] { "横向个数（列）", "Across (columns)" } },
+            { "matrix.rows", new[] { "纵向个数（行）", "Down (rows)" } },
+            { "matrix.gapx", new[] { "横向间距（厘米）", "Horizontal gap (cm)" } },
+            { "matrix.gapy", new[] { "纵向间距（厘米）", "Vertical gap (cm)" } },
+            { "matrix.byposition", new[] { "按现在的位置排（从上到下、从左到右）", "Fill by where they are now (top to bottom, left to right)" } },
+            { "matrix.hint.layout", new[] { "{0} 个对象排成 {1} 列 × {2} 行。", "{0} objects in {1} columns × {2} rows." } },
+            { "matrix.hint.cut", new[] { "切成 {0} 列 × {1} 行，共 {2} 块。", "{0} columns × {1} rows: {2} pieces." } },
+            { "matrix.hint.one", new[] { "1 × 1 不需要切。", "1 × 1 leaves nothing to cut." } },
+            { "matrix.hint.count", new[] { "个数请输入 1 到 {0} 之间的整数。", "Enter whole numbers from 1 to {0}." } },
+            { "matrix.hint.gap", new[] { "间距请输入 -10 到 50 之间的数值（厘米）。", "Enter gaps from -10 to 50 (centimetres)." } },
+            { "matrix.note.text", new[] { "形状上的文字切不开，会被去掉。", "Text on the shape cannot be cut and is left out." } },
+            { "msg.matrix.needtwo", new[] {
+                "矩阵布局至少需要选中 2 个对象。\n可以按住 Shift / Ctrl 逐个点选，或用鼠标拖出选框一次选中多个。",
+                "Matrix layout needs at least 2 selected objects.\nShift- or Ctrl-click to pick several, or drag a selection box around them." } },
+            { "msg.matrix.cut.unsupported", new[] {
+                "矩阵裁剪一次只能切一张图片或一个封闭形状。\n（线条、组合、表格、图表，以及组合里面的对象不支持。）",
+                "Matrix cut takes one picture or one closed shape at a time.\n(Lines, groups, tables, charts and objects inside a group are not supported.)" } },
+            { "msg.matrix.cut.none", new[] { "没有切出任何小块，原对象保持不变。", "No pieces came out; the object is left as it is." } },
 
             // ---- slide size
             { "size.title", new[] { "幻灯片尺寸", "Slide size" } },

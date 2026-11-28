@@ -152,6 +152,13 @@
                      screentip="{{style.cap.tip}}" supertip="{{style.cap.super}}" />
           </box>
         </group>
+        <!-- rows and columns: lay the selected shapes out as a matrix, or cut one into a matrix of pieces -->
+        <group id="grpMatrix" label="{{grp.matrix}}" getImage="GetImage">
+          <button id="btnMatrixLayout" label="{{matrix.layout.label}}" getImage="GetImage" onAction="OnMatrixLayout"
+                  screentip="{{matrix.layout.tip}}" supertip="{{matrix.layout.super}}" />
+          <button id="btnMatrixCut" label="{{matrix.cut.label}}" getImage="GetImage" onAction="OnMatrixCut"
+                  screentip="{{matrix.cut.tip}}" supertip="{{matrix.cut.super}}" />
+        </group>
         <!-- the size of the slides -->
         <group id="grpSlide" label="{{grp.slide}}">
           <button id="btnSlideSize" label="{{size.label}}" size="large" getImage="GetImage" onAction="OnSlideSize"

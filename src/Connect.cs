@@ -15,8 +15,8 @@ using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 [assembly: AssemblyTitle("PptSelectionExport")]
 [assembly: AssemblyDescription("PowerPoint add-in: export the selected objects as PDF / SVG / PNG / JPG, and align, rotate, merge or restyle them")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.7.2.0")]
-[assembly: AssemblyFileVersion("1.7.2.0")]
+[assembly: AssemblyVersion("1.8.0.0")]
+[assembly: AssemblyFileVersion("1.8.0.0")]
 [assembly: ComVisible(false)]
 
 namespace PptSelectionExport
@@ -109,6 +109,9 @@ namespace PptSelectionExport
                     case "btnImage": bmp = Icons.Document("PNG", Color.FromArgb(30, 136, 90)); break;
                     case "btnSlim": bmp = Icons.Slim(); break;
                     case "btnSlideSize": bmp = Icons.SlideSize(); break;
+                    case "btnMatrixLayout": bmp = Icons.MatrixLayoutGlyph(16); break;
+                    case "btnMatrixCut": bmp = Icons.MatrixCutGlyph(16); break;
+                    case "grpMatrix": bmp = Icons.MatrixLayoutGlyph(32); break;
                     case "tglTransparent": bmp = Icons.Checker(32); break;
                     case "tglColor": bmp = Icons.Swatch(_settings.Color, 32); break;
                     case "btnMoreColors": bmp = Icons.Palette(16); break;
@@ -340,6 +343,144 @@ namespace PptSelectionExport
                 }
                 return path;
             }
+        }
+
+        // ------------------------------------------------------------ matrix layout, matrix cut
+
+        /// <summary>
+        /// Lays the selected shapes out in rows and columns. The slide follows the window while the
+        /// user tries values; cancelling puts the shapes back. All of it is one undo step.
+        /// </summary>
+        public void OnMatrixLayout(Office.IRibbonControl control)
+        {
+            IWin32Window owner = Owner();
+            try
+            {
+                PowerPoint.DocumentWindow win;
+                PowerPoint.Selection sel;
+                bool isChild;
+                PowerPoint.ShapeRange range = SelectedShapes(owner, "matrix.layout.title", "msg.shape.nowindow", "msg.shape.noselection", out win, out sel, out isChild);
+                if (range == null) return;
+                var layout = new GridLayout(range);
+                if (layout.Count < 2)
+                {
+                    Info(owner, Strings.T("msg.matrix.needtwo"), "matrix.layout.title");
+                    return;
+                }
+
+                StartUndoEntry();
+                bool accepted = false;
+                int unmoved = 0;
+                try
+                {
+                    using (var dlg = new MatrixForm(MatrixMode.Layout, layout.Count, null, _settings, owner))
+                    {
+                        MatrixForm form = dlg;
+                        EventHandler preview = delegate { if (form.Valid) layout.Apply(form.Grid()); };
+                        dlg.OptionsChanged += preview;
+                        preview(dlg, EventArgs.Empty);          // what the window proposes when it opens
+                        dlg.KeepClear = OnScreen(win, layout.Extent(dlg.Grid()));
+                        accepted = dlg.ShowDialog(owner) == DialogResult.OK;
+                        if (accepted) unmoved = layout.Apply(dlg.Grid());
+                    }
+                }
+                finally
+                {
+                    if (!accepted) layout.Restore();
+                }
+                if (unmoved > 0) Info(owner, Strings.T("msg.align.unmoved", unmoved), "matrix.layout.title");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(owner, Strings.T("msg.shape.failed", ex.Message), Strings.T("matrix.layout.title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        /// <summary>Cuts the selected picture or shape into rows and columns of pieces, as one undo step.</summary>
+        public void OnMatrixCut(Office.IRibbonControl control)
+        {
+            IWin32Window owner = Owner();
+            try
+            {
+                PowerPoint.DocumentWindow win;
+                PowerPoint.Selection sel;
+                bool isChild;
+                PowerPoint.ShapeRange range = SelectedShapes(owner, "matrix.cut.title", "msg.shape.nowindow", "msg.shape.noselection", out win, out sel, out isChild);
+                if (range == null) return;
+                PowerPoint.Shapes shapes = null;
+                if (!isChild && range.Count == 1 && MatrixCut.CanCut(range[1])) shapes = ShapesOf(range[1].Parent);
+                if (shapes == null)
+                {
+                    Info(owner, Strings.T("msg.matrix.cut.unsupported"), "matrix.cut.title");
+                    return;
+                }
+                PowerPoint.Shape shape = range[1];
+
+                int columns, rows;
+                using (var dlg = new MatrixForm(MatrixMode.Cut, 1, MatrixCut.HasText(shape) ? Strings.T("matrix.note.text") : null, _settings, owner))
+                {
+                    if (dlg.ShowDialog(owner) != DialogResult.OK) return;
+                    columns = dlg.Columns;
+                    rows = dlg.Rows;
+                }
+
+                List<PowerPoint.Shape> pieces;
+                Cursor old = Cursor.Current;
+                Cursor.Current = Cursors.WaitCursor;
+                try
+                {
+                    StartUndoEntry();
+                    MatrixCut.Cut(shapes, shape, columns, rows, out pieces);
+                }
+                finally { Cursor.Current = old; }
+
+                if (pieces.Count == 0)
+                {
+                    Info(owner, Strings.T("msg.matrix.cut.none"), "matrix.cut.title");
+                    return;
+                }
+                try
+                {
+                    // leave the pieces selected: Matrix Layout is the usual next step
+                    var indices = new object[pieces.Count];
+                    for (int i = 0; i < pieces.Count; i++) indices[i] = pieces[i].ZOrderPosition;
+                    shapes.Range(indices).Select(Office.MsoTriState.msoTrue);
+                }
+                catch { }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(owner, Strings.T("msg.shape.failed", ex.Message), Strings.T("matrix.cut.title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        /// <summary>An area of the slide (left, top, width, height in points) in screen pixels; empty when the view cannot tell.</summary>
+        private static Rectangle OnScreen(PowerPoint.DocumentWindow win, double[] area)
+        {
+            try
+            {
+                if (area == null) return Rectangle.Empty;
+                int left = win.PointsToScreenPixelsX((float)area[0]), top = win.PointsToScreenPixelsY((float)area[1]);
+                int right = win.PointsToScreenPixelsX((float)(area[0] + area[2])), bottom = win.PointsToScreenPixelsY((float)(area[1] + area[3]));
+                return right > left && bottom > top ? Rectangle.FromLTRB(left, top, right, bottom) : Rectangle.Empty;
+            }
+            catch { return Rectangle.Empty; }
+        }
+
+        /// <summary>The shapes of the slide, layout or master an object is on; null for anything else.</summary>
+        private static PowerPoint.Shapes ShapesOf(object parent)
+        {
+            try
+            {
+                var slide = parent as PowerPoint.Slide;
+                if (slide != null) return slide.Shapes;
+                var layout = parent as PowerPoint.CustomLayout;
+                if (layout != null) return layout.Shapes;
+                var master = parent as PowerPoint.Master;
+                if (master != null) return master.Shapes;
+            }
+            catch { }
+            return null;
         }
 
         // ------------------------------------------------------------ slide size

@@ -136,7 +136,8 @@ namespace PptSelectionExport
                 {
                     if (args.Length > 2 && args[2] == "slim") SlimTests.Run(app);       // "align slim": only the slimming tests
                     else if (args.Length > 2 && args[2] == "size") ResizeTests.Run(app);        // "align size": only the slide size tests
-                    else { AlignTests.Run(app); ShapeToolsTests.Run(app); StyleTests.Run(app); CapTests.Run(app); ResizeTests.Run(app); SlimTests.Run(app); }
+                    else if (args.Length > 2 && args[2] == "matrix") MatrixTests.Run(app);      // "align matrix": only matrix layout and cut
+                    else { AlignTests.Run(app); ShapeToolsTests.Run(app); StyleTests.Run(app); CapTests.Run(app); MatrixTests.Run(app); ResizeTests.Run(app); SlimTests.Run(app); }
                 }
                 finally { if (app.Presentations.Count == 0) app.Quit(); }
                 return;
@@ -234,6 +235,7 @@ namespace PptSelectionExport
                 ShapeToolsTests.Run(app);
                 StyleTests.Run(app);
                 CapTests.Run(app);
+                MatrixTests.Run(app);
                 ResizeTests.Run(app);
                 SlimTests.Run(app);
             }

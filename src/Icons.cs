@@ -479,6 +479,35 @@ namespace PptSelectionExport
             }
         }
 
+        /// <summary>Glyph of "matrix layout": three by three squares.</summary>
+        public static Bitmap MatrixLayoutGlyph(int logical)
+        {
+            var cells = new float[9][];
+            for (int r = 0; r < 3; r++)
+                for (int c = 0; c < 3; c++) cells[r * 3 + c] = R(c * 6, r * 6, 4, 4);
+            return Glyph(logical, cells);
+        }
+
+        /// <summary>Glyph of "matrix cut": one square with a dashed cut across and one down.</summary>
+        public static Bitmap MatrixCutGlyph(int logical)
+        {
+            int px = (int)Math.Round(logical * Scale);
+            float u = px / 16f;
+            var bmp = new Bitmap(px, px, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            using (var red = new SolidBrush(AlignRed))
+            {
+                g.SmoothingMode = SmoothingMode.None;
+                OutlineUnits(g, red, R(1, 1, 14, 14), u);
+                foreach (float at in new[] { 3.5f, 7f, 10.5f })
+                {
+                    FillUnits(g, red, R(7.5f, at, 1, 2), u);       // the cut running down
+                    FillUnits(g, red, R(at, 7.5f, 2, 1), u);       // the cut running across
+                }
+            }
+            return bmp;
+        }
+
         /// <summary>One cell of a colour grid.</summary>
         public static Bitmap ColorCell(Color color, int logical)
         {

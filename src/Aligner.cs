@@ -208,7 +208,7 @@ namespace PptSelectionExport
                 Shape = shape;
                 Order = order;
                 Bounds = Box.Of(shape);
-                Glued = IsGluedConnector(shape);
+                Glued = Aligner.IsGluedConnector(shape);
             }
 
             public void Shift(double d, bool horizontal)
@@ -228,20 +228,22 @@ namespace PptSelectionExport
                 catch { return false; }
             }
 
-            private static bool IsGluedConnector(PowerPoint.Shape s)
+        }
+
+        /// <summary>A connector with at least one end glued to a shape: it follows that shape and is not moved itself.</summary>
+        internal static bool IsGluedConnector(PowerPoint.Shape s)
+        {
+            try
             {
-                try
-                {
-                    if (s.Connector != True) return false;
-                    PowerPoint.ConnectorFormat f = s.ConnectorFormat;
-                    return f.BeginConnected == True || f.EndConnected == True;
-                }
-                catch { return false; }
+                if (s.Connector != True) return false;
+                PowerPoint.ConnectorFormat f = s.ConnectorFormat;
+                return f.BeginConnected == True || f.EndConnected == True;
             }
+            catch { return false; }
         }
 
         /// <summary>An axis-aligned rectangle in slide points.</summary>
-        private struct Box
+        internal struct Box
         {
             public readonly double L, T, R, B;
 

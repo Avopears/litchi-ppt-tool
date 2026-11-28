@@ -10,6 +10,8 @@ It also has one-click **align and distribute** buttons (which can align to a cho
 leave connectors glued to their shapes), **rotate / flip**, **stacking order** and **boolean**
 (merge shapes) buttons,
 a **Style** group for the fill colour, outline colour, weight, dashes and cap type of the selected shapes,
+**Matrix Layout**, which arranges the selected objects in rows and columns, and **Matrix Cut**,
+which cuts one picture into rows and columns of pieces,
 **Slide Size** in centimetres (what is on the slides is scaled to fit),
 and **Slim Down**, which compresses the pictures into a smaller copy of the presentation.
 
@@ -37,7 +39,7 @@ Requirements: Windows, desktop PowerPoint from Microsoft 365 or Office 2019 / 20
 (32- or 64-bit). No administrator rights needed.
 
 1. Open the **[latest release](https://github.com/Avopears/litchi-ppt-tool/releases/latest)** and download
-   the installer under *Assets*. Its name carries the version, for example `Litchi-Setup-1.7.2.exe`.
+   the installer under *Assets*. Its name carries the version, for example `Litchi-Setup-1.8.0.exe`.
 2. Close PowerPoint and run the installer. You can keep the suggested location or pick your own folder.
 3. Start PowerPoint. The add-in's tab is called **Litchi** and sits right after **View**.
 
@@ -153,6 +155,44 @@ recently; *More Colors…* opens that picker, where you can also type a hex or R
   notes page) and takes a moment for very large files. Nothing else about the shapes changes,
   their text included.
 
+### Matrix
+
+**Matrix Layout** arranges the selected objects in rows and columns.
+
+![The Matrix Layout window](docs/matrix.png)
+
+- Type how many **across** (columns) and how many **down** (rows), and the **horizontal** and
+  **vertical gap** in centimetres. The two counts are linked: change one and the other follows,
+  so that all the objects fit. A gap may be negative, to let the objects overlap a little.
+- **The slide follows while you change the values.** Click *OK* when it looks right; *Cancel*
+  puts everything back. The ↑ and ↓ keys change the number in a field by one step.
+- A column is as wide as its widest object and a row as high as its highest; each object sits
+  in the middle of its cell, and the gaps are the space between columns and between rows.
+  Objects of different sizes still line up.
+- The matrix starts at the top left corner of the area the objects occupied. It is filled row
+  by row in the **order you selected the objects**; tick *Fill by where they are now* to fill
+  it by their current positions instead, top to bottom and left to right.
+- A connector glued to shapes takes no cell and follows its shapes. A rotated object is
+  measured by the area it really covers.
+- The whole thing is a single undo step.
+
+**Matrix Cut** cuts one picture or one closed shape into rows and columns of pieces. Each piece
+is an object of its own, and together they look like the original.
+
+![A picture cut into 3 × 2 pieces and spread apart with Matrix Layout](docs/matrix-cut.png)
+
+- Each piece of a **picture** is still a picture, cropped the way PowerPoint crops: all pieces
+  share one image, so the file does not grow, and the *Crop* tool can still change what each
+  piece shows. Rotated, flipped and already cropped pictures can be cut too, and so can a
+  picture that sits in a placeholder of the layout.
+- A **shape** is cut with *Intersect*: fill and outline are kept (if the shape has an outline,
+  it also runs along the cuts), cells the shape does not reach
+  give no piece (the four corners of a diamond, say), and text on the shape cannot be cut and
+  is left out (the window says so).
+- Lines, groups, tables and charts are not supported. Up to 20 pieces in each direction.
+- The pieces are selected afterwards, so Matrix Layout can spread them apart right away.
+  One Ctrl+Z takes the cut back.
+
 ### Slide Size
 
 **Slide Size** in the **Slide** group sets the width and height of the slides in centimetres.
@@ -246,8 +286,9 @@ runs the tests against the PowerPoint on your machine: it builds throw-away pres
 exports many kinds of selections in every format, and aligns and distributes many kinds of
 objects, comparing the results with PowerPoint's own commands, and finally tests rotate, flip,
 the stacking order, the boolean operations, the colour picker's colour maths, the style commands,
-the cap types, the slide size (after each of several new sizes, the position, size and font
-sizes of every object are checked) and Slim Down (it slims a presentation full of oversized pictures, checks the pixels
+the cap types, matrix layout and matrix cut (the pieces of a cut, drawn together, are compared
+pixel by pixel with the object before it was cut), the slide size (after each of several new
+sizes, the position, size and font sizes of every object are checked) and Slim Down (it slims a presentation full of oversized pictures, checks the pixels
 of every picture and compares each slide before and after).
 Add `align` to skip the export tests.
 
@@ -262,13 +303,14 @@ Add `align` to skip the export tests.
 | `src/ShapeTools.cs` | Rotate, flip, stacking order and the boolean operations |
 | `src/StyleTools.cs` | Fill colour, outline colour, weight and dashes |
 | `src/LineCaps.cs` | Cap type (set through a temporary copy of the presentation) |
+| `src/MatrixTools.cs`, `src/MatrixDialog.cs` | Matrix Layout and Matrix Cut; the window they share |
 | `src/SlideResizer.cs`, `src/SlideSizeDialog.cs` | Slide Size: changes the size and scales the content by one factor; its window |
 | `src/Slimmer.cs`, `src/SlimDialog.cs` | Slim Down: measures how large each picture is shown, resamples and re-encodes it, rewrites the package; its window |
 | `src/ColorPicker.cs`, `src/WeightDialog.cs` | The colour picker; the "More Weights…" window |
 | `src/Strings.cs` | All interface text, Chinese and English |
 | `src/Icons.cs`, `src/Settings.cs` | Ribbon icons drawn in code; remembered settings |
 | `installer/Setup.cs` | The exe installer / uninstaller |
-| `tests/TestHarness.cs`, `tests/AlignTests.cs`, `tests/ShapeToolsTests.cs`, `tests/StyleTests.cs`, `tests/CapTests.cs`, `tests/ResizeTests.cs`, `tests/SlimTests.cs` | Tests that drive PowerPoint directly |
+| `tests/TestHarness.cs`, `tests/AlignTests.cs`, `tests/ShapeToolsTests.cs`, `tests/StyleTests.cs`, `tests/CapTests.cs`, `tests/MatrixTests.cs`, `tests/ResizeTests.cs`, `tests/SlimTests.cs` | Tests that drive PowerPoint directly |
 
 ### How it works
 
@@ -284,6 +326,22 @@ Add `align` to skip the export tests.
   slide XML, opens the copy without a window and carries the format of the same shape back with
   `PickUp` / `Apply` (the format painter). The shape in the copy has its text removed first, since
   `Apply` would otherwise give all of the shape's text the format of its first run.
+- **The live preview of Matrix Layout**: PowerPoint redraws a slide an add-in has changed when it
+  next gets idle time, and while an add-in's window is open Office hands out idle time only
+  through a timer that fires 0.9 seconds after things went quiet, so the preview would trail
+  the typing by almost a second. The add-in notes that timer message when it goes by (a
+  `WM_TIMER` for a window of the class `MsoStdCompMgr`) and posts it again 30 ms after each
+  move, and the slide follows within a few hundredths of a second. When the message has not
+  been seen (the first second of the window's first use after PowerPoint was started, or an
+  Office version that works differently) nothing is posted and the preview is simply 0.9
+  seconds late.
+- **Matrix Cut**: each piece of a picture is a duplicate of the picture whose crop frame
+  (`ShapeLeft/Top/Width/Height` of `PictureFormat.Crop`) is set to one cell while the image
+  stays where it is, which is why flipped and already cropped pictures come out right and the
+  file still holds a single image. Each piece of a shape is one `MergeShapes` intersection of a
+  duplicate of the shape with a rectangle the size of the cell. A rotated object is cut upright
+  and every piece is then turned back about the original centre. Finally the pieces are moved
+  to the place the original had in the stacking order.
 - **Slide Size**: PowerPoint's object model can only set the width and then the height, and at
   each step it scales the content on its own: by that step's ratio when the slide shrinks, not
   at all when it grows. A slide made smaller in both directions gets its content shrunk twice;

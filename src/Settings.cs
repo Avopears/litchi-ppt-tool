@@ -36,6 +36,11 @@ namespace PptSelectionExport
         public bool SlimToJpeg = true;
         /// <summary>"Slide size": whether typing a width changes the height along with it.</summary>
         public bool SizeLockRatio = false;
+        /// <summary>"Matrix layout": the gaps between columns and rows in centimetres, and whether the shapes go in by position.</summary>
+        public double MatrixGapX = 0.5, MatrixGapY = 0.5;
+        public bool MatrixByPosition = false;
+        /// <summary>"Matrix cut": how many pieces across and down.</summary>
+        public int CutColumns = 3, CutRows = 3;
         /// <summary>Colours chosen in the colour picker, most recent first.</summary>
         public readonly List<Color> RecentColors = new List<Color>();
         private const int MaxRecent = 12;
@@ -84,6 +89,14 @@ namespace PptSelectionExport
                     if (slimQuality >= 30 && slimQuality <= 100) s.SlimQuality = slimQuality;
                     s.SlimToJpeg = Convert.ToInt32(k.GetValue("SlimToJpeg", 1), CultureInfo.InvariantCulture) != 0;
                     s.SizeLockRatio = Convert.ToInt32(k.GetValue("SizeLockRatio", 0), CultureInfo.InvariantCulture) != 0;
+                    double gap;
+                    if (double.TryParse(Convert.ToString(k.GetValue("MatrixGapX", "0.5"), CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture, out gap) && gap >= -10 && gap <= 50) s.MatrixGapX = gap;
+                    if (double.TryParse(Convert.ToString(k.GetValue("MatrixGapY", "0.5"), CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture, out gap) && gap >= -10 && gap <= 50) s.MatrixGapY = gap;
+                    s.MatrixByPosition = Convert.ToInt32(k.GetValue("MatrixByPosition", 0), CultureInfo.InvariantCulture) != 0;
+                    int cut = Convert.ToInt32(k.GetValue("CutColumns", 3), CultureInfo.InvariantCulture);
+                    if (cut >= 1 && cut <= MatrixCut.MaxCount) s.CutColumns = cut;
+                    cut = Convert.ToInt32(k.GetValue("CutRows", 3), CultureInfo.InvariantCulture);
+                    if (cut >= 1 && cut <= MatrixCut.MaxCount) s.CutRows = cut;
                     int dpi = Convert.ToInt32(k.GetValue("Dpi", 300), CultureInfo.InvariantCulture);
                     if (dpi >= 48 && dpi <= 1200) s.Dpi = dpi;
                     Color c;
@@ -119,6 +132,11 @@ namespace PptSelectionExport
                     k.SetValue("SlimQuality", SlimQuality, RegistryValueKind.DWord);
                     k.SetValue("SlimToJpeg", SlimToJpeg ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("SizeLockRatio", SizeLockRatio ? 1 : 0, RegistryValueKind.DWord);
+                    k.SetValue("MatrixGapX", MatrixGapX.ToString("0.##", CultureInfo.InvariantCulture), RegistryValueKind.String);
+                    k.SetValue("MatrixGapY", MatrixGapY.ToString("0.##", CultureInfo.InvariantCulture), RegistryValueKind.String);
+                    k.SetValue("MatrixByPosition", MatrixByPosition ? 1 : 0, RegistryValueKind.DWord);
+                    k.SetValue("CutColumns", CutColumns, RegistryValueKind.DWord);
+                    k.SetValue("CutRows", CutRows, RegistryValueKind.DWord);
                 }
             }
             catch { }

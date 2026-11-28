@@ -26,8 +26,8 @@ using Microsoft.Win32;
 [assembly: AssemblyTitle("PptSelectionExport Setup")]
 [assembly: AssemblyDescription("Installer for the PowerPoint add-in \"Export Selection\"")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.7.2.0")]
-[assembly: AssemblyFileVersion("1.7.2.0")]
+[assembly: AssemblyVersion("1.8.0.0")]
+[assembly: AssemblyFileVersion("1.8.0.0")]
 
 namespace PptSelectionExportSetup
 {
