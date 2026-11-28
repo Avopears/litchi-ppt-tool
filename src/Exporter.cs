@@ -17,6 +17,87 @@ namespace PptSelectionExport
     }
 
     /// <summary>
+    /// Sets the physical resolution of a PNG file (its pHYs chunk) without touching the picture:
+    /// the file is copied chunk by chunk, with the resolution put in front of the image data.
+    /// </summary>
+    internal static class PngResolution
+    {
+        private static readonly byte[] Signature = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
+        private static readonly uint[] CrcTable = MakeCrcTable();
+
+        /// <summary>Copies <paramref name="source"/> to <paramref name="target"/> with the resolution set. InvalidDataException when it is not a PNG.</summary>
+        public static void Copy(string source, string target, int dpi)
+        {
+            byte[] png = File.ReadAllBytes(source);
+            if (png.Length < Signature.Length + 12) throw new InvalidDataException();
+            for (int i = 0; i < Signature.Length; i++) if (png[i] != Signature[i]) throw new InvalidDataException();
+
+            // pixels per metre, the same in both directions; unit 1 = metre
+            uint perMetre = (uint)Math.Round(dpi / 0.0254);
+            byte[] phys = new byte[4 + 4 + 9 + 4];
+            WriteUInt(phys, 0, 9);
+            phys[4] = (byte)'p'; phys[5] = (byte)'H'; phys[6] = (byte)'Y'; phys[7] = (byte)'s';
+            WriteUInt(phys, 8, perMetre);
+            WriteUInt(phys, 12, perMetre);
+            phys[16] = 1;
+            WriteUInt(phys, 17, Crc(phys, 4, 13));
+
+            using (var result = new MemoryStream(png.Length + phys.Length))
+            {
+                result.Write(png, 0, Signature.Length);
+                int pos = Signature.Length;
+                bool stamped = false, ended = false;
+                while (pos + 12 <= png.Length && !ended)
+                {
+                    long length = ((long)png[pos] << 24) | ((long)png[pos + 1] << 16) | ((long)png[pos + 2] << 8) | png[pos + 3];
+                    if (length > png.Length - pos - 12) throw new InvalidDataException();
+                    int total = 12 + (int)length;
+                    bool isPhys = Is(png, pos + 4, "pHYs");
+                    if (!stamped && Is(png, pos + 4, "IDAT"))       // the resolution has to come before the image data
+                    {
+                        result.Write(phys, 0, phys.Length);
+                        stamped = true;
+                    }
+                    if (!isPhys) result.Write(png, pos, total);     // a resolution that was there is replaced by ours
+                    ended = Is(png, pos + 4, "IEND");
+                    pos += total;
+                }
+                if (!stamped || !ended) throw new InvalidDataException();
+                File.WriteAllBytes(target, result.ToArray());
+            }
+        }
+
+        private static bool Is(byte[] data, int offset, string type)
+        {
+            return data[offset] == type[0] && data[offset + 1] == type[1] && data[offset + 2] == type[2] && data[offset + 3] == type[3];
+        }
+
+        private static void WriteUInt(byte[] data, int offset, uint value)
+        {
+            data[offset] = (byte)(value >> 24); data[offset + 1] = (byte)(value >> 16); data[offset + 2] = (byte)(value >> 8); data[offset + 3] = (byte)value;
+        }
+
+        private static uint[] MakeCrcTable()
+        {
+            var table = new uint[256];
+            for (uint n = 0; n < 256; n++)
+            {
+                uint c = n;
+                for (int k = 0; k < 8; k++) c = (c & 1) != 0 ? 0xEDB88320u ^ (c >> 1) : c >> 1;
+                table[n] = c;
+            }
+            return table;
+        }
+
+        private static uint Crc(byte[] data, int offset, int count)
+        {
+            uint c = 0xFFFFFFFFu;
+            for (int i = 0; i < count; i++) c = CrcTable[(c ^ data[offset + i]) & 0xFF] ^ (c >> 8);
+            return c ^ 0xFFFFFFFFu;
+        }
+    }
+
+    /// <summary>
     /// Exports a range of shapes, cropped to the smallest rectangle that covers everything
     /// that is drawn for them (outlines, arrow heads and shadows included).
     /// </summary>
@@ -97,6 +178,20 @@ namespace PptSelectionExport
                                 Math.Max(1, (int)Math.Round(pw * fx)), Math.Max(1, (int)Math.Round(ph * fy)), PowerPoint.PpExportMode.ppScaleXY);
                         }
                     }
+                }
+
+                // A transparent PNG is the picture PowerPoint just wrote, as it is. Only the resolution has to
+                // be stamped into the file; decoding, redrawing and encoding it again would take as long as
+                // PowerPoint took to make it.
+                if (!jpeg && bg.Transparent)
+                {
+                    try
+                    {
+                        Size written = ReadImageSize(raw);
+                        PngResolution.Copy(raw, path, dpi);
+                        return written;
+                    }
+                    catch (InvalidDataException) { }        // not laid out like a PNG: take the long way
                 }
 
                 using (var fs = new FileStream(raw, FileMode.Open, FileAccess.Read))

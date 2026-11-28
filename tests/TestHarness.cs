@@ -43,15 +43,77 @@ namespace PptSelectionExport
                 Size px = Exporter.ExportImage(range, slideW, slideH, file, bg, dpi, jpeg);
                 sw.Stop();
                 double ew = natural.Width * dpi / 96.0, eh = natural.Height * dpi / 96.0;
+
+                // A transparent PNG is PowerPoint's own picture with the resolution stamped in: it must be that picture, pixel for pixel.
+                string pixels = "";
+                if (!jpeg && bg.Transparent)
+                {
+                    string direct = Path.Combine(outDir, "_direct.png");
+                    double k = dpi / 96.0;
+                    if (dpi == 96) range.Export(direct, PowerPoint.PpShapeFormat.ppShapeFormatPNG);
+                    else range.Export(direct, PowerPoint.PpShapeFormat.ppShapeFormatPNG, Math.Max(1, (int)Math.Round(slideW * k)), Math.Max(1, (int)Math.Round(slideH * k)), PowerPoint.PpExportMode.ppScaleXY);
+                    pixels = SamePixels(direct, file) ? "  = PowerPoint's pixels" : "  PIXELS DIFFER";
+                    File.Delete(direct);
+                }
                 using (var bmp = new Bitmap(file))
                 {
                     Color corner = bmp.GetPixel(0, bmp.Height - 1);
-                    Console.WriteLine("{0,-26} {1} x {2} px (expected {3:0} x {4:0})  dpi tag {5:0.#}  corner ARGB {6},{7},{8},{9}  {10} ms  {11}",
+                    bool sized = Math.Abs(px.Width - ew) <= 3 + ew * 0.01 && Math.Abs(px.Height - eh) <= 3 + eh * 0.01;
+                    Console.WriteLine("{0,-26} {1} x {2} px (expected {3:0} x {4:0})  dpi tag {5:0.#}  corner ARGB {6},{7},{8},{9}  {10} ms  {11}{12}",
                         name, px.Width, px.Height, ew, eh, bmp.HorizontalResolution, corner.A, corner.R, corner.G, corner.B, sw.ElapsedMilliseconds,
-                        Math.Abs(px.Width - ew) <= 3 + ew * 0.01 && Math.Abs(px.Height - eh) <= 3 + eh * 0.01 ? "OK" : "SIZE MISMATCH");
+                        !sized ? "SIZE MISMATCH" : Math.Abs(bmp.HorizontalResolution - dpi) > 0.5 ? "DPI MISMATCH" : pixels.Contains("DIFFER") ? "MISMATCH" : "OK", pixels);
                 }
             }
             catch (Exception ex) { Console.WriteLine("{0,-26} FAILED: {1}", name, ex); }
+        }
+
+        private static bool SamePixels(string fileA, string fileB)
+        {
+            using (var a = new Bitmap(fileA))
+            using (var b = new Bitmap(fileB))
+            {
+                if (a.Size != b.Size) return false;
+                var area = new Rectangle(0, 0, a.Width, a.Height);
+                BitmapData da = a.LockBits(area, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb), db = b.LockBits(area, ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+                try
+                {
+                    byte[] ra = new byte[a.Width * 4], rb = new byte[a.Width * 4];
+                    for (int y = 0; y < a.Height; y++)
+                    {
+                        System.Runtime.InteropServices.Marshal.Copy(new IntPtr(da.Scan0.ToInt64() + (long)y * da.Stride), ra, 0, ra.Length);
+                        System.Runtime.InteropServices.Marshal.Copy(new IntPtr(db.Scan0.ToInt64() + (long)y * db.Stride), rb, 0, rb.Length);
+                        for (int i = 0; i < ra.Length; i++) if (ra[i] != rb[i]) return false;
+                    }
+                    return true;
+                }
+                finally { a.UnlockBits(da); b.UnlockBits(db); }
+            }
+        }
+
+        /// <summary>The resolution stamp on its own: on pictures made here, without PowerPoint.</summary>
+        private static void PngStampTests()
+        {
+            string made = Path.Combine(outDir, "_stamp_in.png"), stamped = Path.Combine(outDir, "_stamp_out.png"), again = Path.Combine(outDir, "_stamp_again.png");
+            using (var bmp = new Bitmap(60, 40, PixelFormat.Format32bppArgb))
+            {
+                using (Graphics g = Graphics.FromImage(bmp)) { g.Clear(Color.Transparent); g.FillEllipse(Brushes.Tomato, 5, 5, 40, 25); }
+                bmp.Save(made, ImageFormat.Png);
+            }
+            PngResolution.Copy(made, stamped, 300);
+            PngResolution.Copy(stamped, again, 600);            // a picture that has a resolution already: it is replaced, not added
+            double first, second;
+            using (var b = new Bitmap(stamped)) first = b.HorizontalResolution;
+            using (var b = new Bitmap(again)) second = b.HorizontalResolution;
+            int chunks = 0;
+            byte[] bytes = File.ReadAllBytes(again);
+            for (int i = 0; i + 4 <= bytes.Length; i++) if (bytes[i] == 'p' && bytes[i + 1] == 'H' && bytes[i + 2] == 'Y' && bytes[i + 3] == 's') chunks++;
+            bool refused = false;
+            string notPng = Path.Combine(outDir, "_stamp_bad.png");
+            File.WriteAllText(notPng, "this is not a picture");
+            try { PngResolution.Copy(notPng, stamped + ".x", 300); } catch (InvalidDataException) { refused = true; }
+            bool ok = Math.Abs(first - 300) < 0.5 && Math.Abs(second - 600) < 0.5 && chunks == 1 && SamePixels(made, stamped) && SamePixels(made, again) && refused && !File.Exists(stamped + ".x");
+            Console.WriteLine("{0,-26} {1}  ({2:0.#} dpi, then {3:0.#} dpi, {4} resolution chunk, pixels kept, a non-PNG is refused: {5})", "png resolution stamp", ok ? "OK" : "MISMATCH", first, second, chunks, refused);
+            foreach (string f in new[] { made, stamped, again, notPng }) File.Delete(f);
         }
 
         private static PowerPoint.ShapeRange R(params PowerPoint.Shape[] shapes)
@@ -79,6 +141,8 @@ namespace PptSelectionExport
                 finally { if (app.Presentations.Count == 0) app.Quit(); }
                 return;
             }
+
+            PngStampTests();
 
             string png = Path.Combine(outDir, "_picture.png");
             using (var bmp = new Bitmap(240, 160))

@@ -37,7 +37,7 @@ Requirements: Windows, desktop PowerPoint from Microsoft 365 or Office 2019 / 20
 (32- or 64-bit). No administrator rights needed.
 
 1. Open the **[latest release](https://github.com/Avopears/litchi-ppt-tool/releases/latest)** and download
-   the installer under *Assets*. Its name carries the version, for example `Litchi-Setup-1.7.1.exe`.
+   the installer under *Assets*. Its name carries the version, for example `Litchi-Setup-1.7.2.exe`.
 2. Close PowerPoint and run the installer. You can keep the suggested location or pick your own folder.
 3. Start PowerPoint. The add-in's tab is called **Litchi** and sits right after **View**.
 
