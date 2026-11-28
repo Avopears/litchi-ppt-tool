@@ -23,7 +23,7 @@ $src = Get-ChildItem (Join-Path $root 'src') -Filter *.cs | ForEach-Object { $_.
 
 & $csc /nologo /codepage:65001 /target:library /platform:anycpu /optimize+ /warn:4 `
     "/out:$out" "/link:$piaPpt" "/link:$piaOffice" `
-    /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll `
+    /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Xml.dll /r:System.IO.Compression.dll `
     "/resource:$(Join-Path $root 'src\Ribbon.xml'),PptSelectionExport.Ribbon.xml" `
     $src
 if ($LASTEXITCODE -ne 0) { throw '编译失败。' }

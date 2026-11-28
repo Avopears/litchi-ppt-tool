@@ -356,14 +356,14 @@ namespace PptSelectionExport
 
         // ------------------------------------------------------------------ temp files
 
-        private static string NewTempDir()
+        internal static string NewTempDir()
         {
             string dir = Path.Combine(Path.GetTempPath(), "PptSelectionExport", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(dir);
             return dir;
         }
 
-        private static void TryDeleteDir(string dir)
+        internal static void TryDeleteDir(string dir)
         {
             try { Directory.Delete(dir, true); } catch { }
         }

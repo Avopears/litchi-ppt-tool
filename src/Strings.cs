@@ -114,6 +114,17 @@ namespace PptSelectionExport
             { "flip.v.label", new[] { "垂直翻转", "Flip Vertical" } },
             { "flip.v.super", new[] { "把选中的每个对象上下镜像翻转，位置不变。", "Mirrors each selected object top to bottom, in place." } },
 
+            // ---- ribbon: stacking order
+            { "grp.order", new[] { "层次", "Order" } },
+            { "order.front.label", new[] { "置于顶层", "Bring to Front" } },
+            { "order.front.super", new[] { "把选中的对象放到所有对象的最上面。选中多个对象时，它们之间的上下顺序不变。", "Puts the selected objects on top of everything else. Several selected objects keep their order among themselves." } },
+            { "order.forward.label", new[] { "上移一层", "Bring Forward" } },
+            { "order.forward.super", new[] { "把选中的对象往上移一层。", "Moves the selected objects one step towards the front." } },
+            { "order.back.label", new[] { "置于底层", "Send to Back" } },
+            { "order.back.super", new[] { "把选中的对象放到所有对象的最下面。选中多个对象时，它们之间的上下顺序不变。", "Puts the selected objects behind everything else. Several selected objects keep their order among themselves." } },
+            { "order.backward.label", new[] { "下移一层", "Send Backward" } },
+            { "order.backward.super", new[] { "把选中的对象往下移一层。", "Moves the selected objects one step towards the back." } },
+
             // ---- ribbon: boolean (merge shapes)
             { "grp.merge", new[] { "布尔", "Merge" } },
             { "merge.union.label", new[] { "联合", "Union" } },
@@ -158,6 +169,30 @@ namespace PptSelectionExport
             { "dash.longdash", new[] { "长划线", "Long Dash" } },
             { "dash.longdashdot", new[] { "长划线-点", "Long Dash Dot" } },
             { "dash.longdashdotdot", new[] { "长划线-点-点", "Long Dash Dot Dot" } },
+            { "style.cap.label", new[] { "线端", "Cap" } },
+            { "style.cap.tip", new[] { "线端类型", "Line cap type" } },
+            { "style.cap.super", new[] {
+                "线条两端（以及虚线每一小段两端）的形状，就是“设置形状格式 → 线条 → 线端类型”那一项。\n平：正好在端点处截止；方：两端各多出半个线宽；圆：两端是半圆。\n\n只能用于普通幻灯片上的对象。插件要先临时存一份演示文稿的副本才能改这一项，文件很大时请稍等。",
+                "The shape of a line's two ends (and of the ends of every dash): the Cap type setting under Format Shape > Line.\nFlat: stops exactly at the end point. Square: reaches half the line weight past it. Round: ends in a half circle.\n\nFor objects on a slide only. The add-in has to save a temporary copy of the presentation to change this, so very large files take a moment." } },
+            { "cap.square", new[] { "方", "Square" } },
+            { "cap.round", new[] { "圆", "Round" } },
+            { "cap.flat", new[] { "平", "Flat" } },
+
+            // ---- ribbon: slide size
+            { "grp.slide", new[] { "幻灯片", "Slide" } },
+            { "size.label", new[] { "设置尺寸", "Slide Size" } },
+            { "size.tip", new[] { "设置幻灯片尺寸（厘米）", "Set the slide size (in centimetres)" } },
+            { "size.super", new[] {
+                "按厘米设置幻灯片的宽度和高度。已经做好的内容会按“确保适合”的方式自动等比缩放并保持居中：按宽、高两个比例里较小的那个缩放，原来在页面里的内容不会跑到页面外。\n\n位置、大小、字号、文字边距和段落间距一起缩放；线条粗细和阴影等效果保持不变（和 PowerPoint 一样）。一次 Ctrl+Z 可以撤回。",
+                "Sets the width and height of the slides in centimetres. What is already on them is scaled to fit and stays centred, as with PowerPoint's Ensure Fit: by the smaller of the two ratios, so that nothing that was on the slide ends up off it.\n\nPosition, size, font sizes, text margins and paragraph spacing are scaled together; line weights and effects such as shadows keep their size (as in PowerPoint). One Ctrl+Z takes it back." } },
+
+            // ---- ribbon: file tools
+            { "grp.file", new[] { "文件", "File" } },
+            { "slim.label", new[] { "PPT 瘦身", "Slim Down" } },
+            { "slim.tip", new[] { "压缩图片，另存一份更小的演示文稿", "Compress the pictures into a smaller copy of the presentation" } },
+            { "slim.super", new[] {
+                "把演示文稿里的图片缩小到够用的分辨率并重新压缩，另存成一份更小的新文件，原文件不会被改动。\n\n可以选分辨率上限和图片质量，先看能省多少，满意了再保存。矢量图、动图和音视频不处理。",
+                "Shrinks the pictures in the presentation to the resolution they need, compresses them again and saves the result as a new, smaller file. The original is not changed.\n\nChoose a resolution limit and a picture quality, see how much it saves, and save when you like the result. Vector images, animated GIFs, video and audio are left as they are." } },
 
             { "toobject.label", new[] { "对齐到对象", "Align to Object" } },
             { "toobject.super", new[] {
@@ -204,6 +239,10 @@ namespace PptSelectionExport
             { "msg.align.failed", new[] { "对齐失败：\n{0}", "Could not align:\n{0}" } },
             { "title.rotate", new[] { "旋转", "Rotate" } },
             { "title.merge", new[] { "布尔运算", "Merge Shapes" } },
+            { "title.order", new[] { "层次", "Order" } },
+            { "msg.order.child", new[] {
+                "无法调整这个组合内对象的层次。\n可以先取消组合（Ctrl+Shift+G），调整后再重新组合。",
+                "The order of this object inside its group could not be changed.\nUngroup first (Ctrl+Shift+G), change the order, then group again." } },
             { "msg.shape.nowindow", new[] {
                 "请先打开一个演示文稿，并在普通编辑视图中选中对象。",
                 "Open a presentation and select objects in the normal editing view." } },
@@ -225,6 +264,69 @@ namespace PptSelectionExport
             { "msg.style.none", new[] {
                 "选中的对象里没有可以这样设置的形状。\n（线条没有填充；表格、图表等对象请用 PowerPoint 自带的格式工具。）",
                 "None of the selected objects can take this setting.\n(Lines have no fill; for tables, charts and similar objects use PowerPoint's own format tools.)" } },
+            { "msg.cap.needsslide", new[] {
+                "线端类型只能设置给普通幻灯片上的对象。\n（母版、版式、备注页里的对象，请用“设置形状格式 → 线条 → 线端类型”。）",
+                "The cap type can only be set for objects on a slide.\n(For objects on a master, a layout or a notes page use Format Shape > Line > Cap type.)" } },
+            { "err.cap.copy", new[] {
+                "读不了演示文稿的临时副本（设置了打开密码的演示文稿不支持这一项）。",
+                "The temporary copy of the presentation could not be read (presentations with a password to open are not supported here)." } },
+
+            // ---- slide size
+            { "size.title", new[] { "幻灯片尺寸", "Slide size" } },
+            { "size.current", new[] { "当前：{0} × {1} 厘米", "Now: {0} × {1} cm" } },
+            { "size.width", new[] { "宽度（厘米）", "Width (cm)" } },
+            { "size.height", new[] { "高度（厘米）", "Height (cm)" } },
+            { "size.swap", new[] { "交换", "Swap" } },
+            { "size.presets", new[] { "常用尺寸", "Common sizes" } },
+            { "size.preset.wide", new[] { "宽屏 16:9", "Widescreen 16:9" } },
+            { "size.preset.standard", new[] { "标准 4:3", "Standard 4:3" } },
+            { "size.preset.a4", new[] { "A4 横向", "A4 landscape" } },
+            { "size.lock", new[] { "锁定宽高比（改一个，另一个跟着变）", "Lock the proportions (change one, the other follows)" } },
+            { "size.hint.scale", new[] { "已有内容会等比缩放到 {0}%，并保持居中。", "What is on the slides is scaled to {0}% and stays centred." } },
+            { "size.hint.same", new[] { "已有内容大小不变，保持居中。", "What is on the slides keeps its size and stays centred." } },
+            { "size.hint.nochange", new[] { "尺寸没有变化。", "The size is unchanged." } },
+            { "size.hint.invalid", new[] { "请输入 2.54 到 142.24 之间的数值（厘米）。", "Enter values from 2.54 to 142.24 (centimetres)." } },
+            { "size.note", new[] { "线条粗细和阴影等效果保持不变，和 PowerPoint 的“确保适合”一样。", "Line weights and effects keep their size, as with PowerPoint's Ensure Fit." } },
+            { "msg.size.failed", new[] { "设置尺寸失败：\n{0}", "The slide size could not be changed:\n{0}" } },
+
+            // ---- slim down
+            { "slim.title", new[] { "PPT 瘦身", "Slim down presentation" } },
+            { "slim.overview", new[] { "当前大小：{0}", "Size now: {0}" } },
+            { "slim.part.images", new[] { "图片 {0} 张，{1}", "{0} pictures, {1}" } },
+            { "slim.part.media", new[] { "音视频 {0}", "Video and audio {0}" } },
+            { "slim.part.other", new[] { "其他 {0}", "Everything else {0}" } },
+            { "slim.none", new[] { "无", "none" } },
+            { "slim.ppi.caption", new[] { "图片分辨率上限（按图片在幻灯片上显示的大小计算）", "Resolution limit (for the size a picture has on its slide)" } },
+            { "slim.ppi.keep", new[] { "不缩小", "Keep" } },
+            { "slim.ppi.hint.0", new[] { "不减少像素，只重新压缩。", "Keeps every pixel and only compresses again." } },
+            { "slim.ppi.hint.330", new[] { "高清：放大看、高分辨率打印都清晰。", "High definition: sharp when zoomed in or printed at high resolution." } },
+            { "slim.ppi.hint.220", new[] { "推荐：打印和 4K 屏幕全屏放映都清晰。", "Recommended: sharp in print and full-screen on a 4K display." } },
+            { "slim.ppi.hint.150", new[] { "投影仪和普通屏幕放映足够，文件更小。", "Enough for projectors and ordinary screens; smaller files." } },
+            { "slim.ppi.hint.96", new[] { "最小，适合发邮件；放大看会模糊。", "Smallest, good for e-mail; blurry when zoomed in." } },
+            { "slim.quality.caption", new[] { "图片质量（JPEG）：85 以上几乎看不出差别，60 以下会出现色块", "Picture quality (JPEG): hard to tell apart above 85, blocky below 60" } },
+            { "slim.tojpeg", new[] { "把不带透明的照片从 PNG 转成 JPG（截图和图表仍保持 PNG）", "Save photos without transparency as JPG instead of PNG (charts stay PNG)" } },
+            { "slim.idle", new[] {
+                "点“开始压缩”看看能省多少，满意了再“另存为…”。原文件不会被改动。",
+                "Click Compress to see how much it saves, then Save As… when you like the result. The original file is not changed." } },
+            { "slim.changed", new[] { "设置改了，再点一次“开始压缩”看新的结果。", "The settings have changed: click Compress again for the new result." } },
+            { "slim.preparing", new[] { "正在分析…", "Analysing…" } },
+            { "slim.working", new[] { "正在处理图片 {0} / {1}…", "Compressing picture {0} of {1}…" } },
+            { "slim.result.detail", new[] { "改动了 {0} 张图片，{1} 张保持原样。", "{0} pictures changed, {1} left as they are." } },
+            { "slim.result.none", new[] { "按当前设置，这份演示文稿已经没什么可压的了。", "With these settings there is next to nothing to gain in this presentation." } },
+            { "slim.start", new[] { "开始压缩", "Compress" } },
+            { "slim.cancel", new[] { "取消", "Cancel" } },
+            { "slim.saveas", new[] { "另存为…", "Save As…" } },
+            { "slim.saved", new[] { "已保存：{0}", "Saved: {0}" } },
+            { "slim.dlg", new[] { "另存瘦身后的演示文稿", "Save the slimmed presentation" } },
+            { "filter.pptx", new[] { "PowerPoint 演示文稿 (*.pptx)|*.pptx", "PowerPoint presentation (*.pptx)|*.pptx" } },
+            { "filter.pptm", new[] { "启用宏的 PowerPoint 演示文稿 (*.pptm)|*.pptm", "PowerPoint macro-enabled presentation (*.pptm)|*.pptm" } },
+            { "slim.suffix", new[] { "_压缩", "_compressed" } },
+            { "msg.slim.nowindow", new[] { "请先打开一个演示文稿。\n（受保护的视图下无法使用。）", "Open a presentation first.\n(Not available in Protected View.)" } },
+            { "msg.slim.samefile", new[] { "不能覆盖正在打开的这份演示文稿，请换一个文件名。", "The presentation that is open cannot be overwritten. Choose another file name." } },
+            { "msg.slim.failed", new[] { "瘦身失败：\n{0}", "Slimming failed:\n{0}" } },
+            { "msg.slim.locked", new[] {
+                "\n\n如果目标文件正在 PowerPoint 或其他程序里打开，请先关闭它。",
+                "\n\nIf the target file is open in PowerPoint or another program, close it first." } },
 
             // ---- weight dialog
             { "weight.title", new[] { "线条粗细", "Line weight" } },

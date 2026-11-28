@@ -22,6 +22,7 @@ namespace PptSelectionExport
                 RotateAndFlip();
                 foreach (MergeCommand cmd in (MergeCommand[])Enum.GetValues(typeof(MergeCommand))) MergeTwoRectangles(cmd);
                 MergeRefusals();
+                StackingOrder();
                 ColourMaths();
                 Console.WriteLine("shape tool tests: {0} passed, {1} failed", passed, failed);
             }
@@ -99,6 +100,53 @@ namespace PptSelectionExport
             while (slide.Shapes.Count > 0) slide.Shapes[1].Delete();
         }
 
+        /// <summary>Five stacked shapes A (back) to E (front); each case starts from that order.</summary>
+        private static void StackingOrder()
+        {
+            Order("to front: one shape", OrderCommand.BringToFront, "A C D E B", "B");
+            Order("to back: one shape", OrderCommand.SendToBack, "D A B C E", "D");
+            Order("forward: one step", OrderCommand.BringForward, "A C B D E", "B");
+            Order("backward: one step", OrderCommand.SendBackward, "A B D C E", "D");
+            Order("forward at the top / backward at the bottom", OrderCommand.BringForward, "A B C D E", "E");
+            Order("backward at the bottom", OrderCommand.SendBackward, "A B C D E", "A");
+            Order("to front: two shapes keep their order", OrderCommand.BringToFront, "A C E B D", "D", "B");
+            Order("to back: two shapes keep their order", OrderCommand.SendToBack, "B D A C E", "D", "B");
+            Order("forward: two shapes, one step each", OrderCommand.BringForward, "A C B E D", "B", "D");
+            Order("backward: neighbours move as a block", OrderCommand.SendBackward, "A C D B E", "C", "D");
+
+            // a whole group moves like one object
+            Stack();
+            PowerPoint.Shape grp = slide.Shapes.Range(new object[] { "B", "C" }).Group();
+            grp.Name = "G";
+            ShapeTools.Order(slide.Shapes.Range(new object[] { "G" }), OrderCommand.BringToFront);
+            Check("to front: a group", Sequence() == "A D E G", Sequence());
+            while (slide.Shapes.Count > 0) slide.Shapes[1].Delete();
+        }
+
+        private static void Order(string name, OrderCommand cmd, string expected, params string[] selected)
+        {
+            Stack();
+            var names = new object[selected.Length];
+            for (int i = 0; i < selected.Length; i++) names[i] = selected[i];
+            ShapeTools.Order(slide.Shapes.Range(names), cmd);
+            Check(name, Sequence() == expected, Sequence());
+            while (slide.Shapes.Count > 0) slide.Shapes[1].Delete();
+        }
+
+        private static void Stack()
+        {
+            foreach (string n in new[] { "A", "B", "C", "D", "E" })
+                Add(Office.MsoAutoShapeType.msoShapeRectangle, 100, 100, 80, 60, n);
+        }
+
+        /// <summary>Names of the shapes on the slide from back to front.</summary>
+        private static string Sequence()
+        {
+            var names = new string[slide.Shapes.Count];
+            for (int i = 1; i <= slide.Shapes.Count; i++) names[i - 1] = slide.Shapes[i].Name;
+            return string.Join(" ", names);
+        }
+
         /// <summary>Every colour survives RGB -> HSV -> RGB, so the picker's handles land where the colour is.</summary>
         private static void ColourMaths()
         {
@@ -113,6 +161,21 @@ namespace PptSelectionExport
                         if (ColorPickerForm.FromHsv(h, s, v).ToArgb() != c.ToArgb()) bad++;
                     }
             Check("colour maths: RGB -> HSV -> RGB", bad == 0, bad + " colours changed");
+
+            // the hue ring: yellow at the top, hue growing clockwise; a handle placed for a hue reads back as that hue
+            bool compass = Near(ColorPickerForm.HueAt(0, -1), 60) && Near(ColorPickerForm.HueAt(1, 0), 150)
+                           && Near(ColorPickerForm.HueAt(0, 1), 240) && Near(ColorPickerForm.HueAt(-1, 0), 330);
+            int off = 0;
+            for (int hue = 0; hue < 360; hue++)
+            {
+                PointF p = ColorPickerForm.HuePoint(hue, 100);
+                float back = ColorPickerForm.HueAt(p.X, p.Y);
+                float diff = Math.Abs(back - hue);
+                if (Math.Min(diff, 360 - diff) > 0.01f) off++;
+            }
+            PointF red = ColorPickerForm.HuePoint(0, 100), magenta = ColorPickerForm.HuePoint(300, 100);
+            bool placed = red.X < -80 && red.Y < -40 && magenta.X < -80 && magenta.Y > 40;      // red upper left, magenta lower left
+            Check("hue ring: directions and round trip", compass && off == 0 && placed, off + " hues off; top=" + ColorPickerForm.HueAt(0, -1));
         }
 
         // ------------------------------------------------------------------ helpers

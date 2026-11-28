@@ -86,6 +86,21 @@
                     screentip="{{flip.v.label}}" supertip="{{flip.v.super}}" />
           </box>
         </group>
+        <!-- stacking order: the top row moves up, the bottom row moves down -->
+        <group id="grpOrder" label="{{grp.order}}" getImage="GetImage">
+          <box id="boxOrderUp" boxStyle="horizontal">
+            <button id="btnBringToFront" label="{{order.front.label}}" showLabel="false" getImage="GetImage" onAction="OnOrder"
+                    screentip="{{order.front.label}}" supertip="{{order.front.super}}" />
+            <button id="btnBringForward" label="{{order.forward.label}}" showLabel="false" getImage="GetImage" onAction="OnOrder"
+                    screentip="{{order.forward.label}}" supertip="{{order.forward.super}}" />
+          </box>
+          <box id="boxOrderDown" boxStyle="horizontal">
+            <button id="btnSendToBack" label="{{order.back.label}}" showLabel="false" getImage="GetImage" onAction="OnOrder"
+                    screentip="{{order.back.label}}" supertip="{{order.back.super}}" />
+            <button id="btnSendBackward" label="{{order.backward.label}}" showLabel="false" getImage="GetImage" onAction="OnOrder"
+                    screentip="{{order.backward.label}}" supertip="{{order.backward.super}}" />
+          </box>
+        </group>
         <group id="grpMerge" label="{{grp.merge}}" getImage="GetImage">
           <box id="boxMerge1" boxStyle="horizontal">
             <button id="btnUnion" label="{{merge.union.label}}" showLabel="false" getImage="GetImage" onAction="OnMerge"
@@ -100,7 +115,7 @@
                     screentip="{{merge.fragment.label}}" supertip="{{merge.fragment.super}}" />
           </box>
         </group>
-        <!-- fill and outline of the selected shapes: two rows of two drop-down lists -->
+        <!-- fill and outline of the selected shapes: three rows of drop-down lists (colours, weight and dashes, cap type) -->
         <group id="grpStyle" label="{{grp.style}}" getImage="GetImage">
           <box id="boxStyleColor" boxStyle="horizontal">
             <gallery id="galFill" label="{{style.fill.label}}" getImage="GetImage" columns="12" itemWidth="18" itemHeight="18"
@@ -130,6 +145,22 @@
                      getItemLabel="GetDashLabel" getSelectedItemIndex="GetDashIndex" onAction="OnDashPicked"
                      screentip="{{style.dash.tip}}" supertip="{{style.dash.super}}" />
           </box>
+          <box id="boxStyleCap" boxStyle="horizontal">
+            <gallery id="galCap" label="{{style.cap.label}}" getImage="GetImage" columns="1" itemWidth="96" itemHeight="18"
+                     showItemLabel="true" getItemCount="GetCapCount" getItemID="GetCapId" getItemImage="GetCapImage"
+                     getItemLabel="GetCapLabel" getSelectedItemIndex="GetCapIndex" onAction="OnCapPicked"
+                     screentip="{{style.cap.tip}}" supertip="{{style.cap.super}}" />
+          </box>
+        </group>
+        <!-- the size of the slides -->
+        <group id="grpSlide" label="{{grp.slide}}">
+          <button id="btnSlideSize" label="{{size.label}}" size="large" getImage="GetImage" onAction="OnSlideSize"
+                  screentip="{{size.tip}}" supertip="{{size.super}}" />
+        </group>
+        <!-- tools for the whole file -->
+        <group id="grpFile" label="{{grp.file}}">
+          <button id="btnSlim" label="{{slim.label}}" size="large" getImage="GetImage" onAction="OnSlim"
+                  screentip="{{slim.tip}}" supertip="{{slim.super}}" />
         </group>
       </tab>
     </tabs>

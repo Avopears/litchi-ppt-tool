@@ -74,6 +74,64 @@ namespace PptSelectionExport
             return bmp;
         }
 
+        /// <summary>A slide with a measuring arrow along its width and one along its height: "slide size", 32 logical pixels.</summary>
+        public static Bitmap SlideSize()
+        {
+            Graphics g; float s;
+            Bitmap bmp = Canvas(32, out g, out s);
+            using (g)
+            {
+                var slide = new RectangleF(2.5f, 3.5f, 20f, 15f);
+                g.FillRectangle(Brushes.White, slide);
+                using (var pen = new Pen(Color.FromArgb(120, 120, 120), 1f)) g.DrawRectangle(pen, slide.X, slide.Y, slide.Width, slide.Height);
+                using (var b = new SolidBrush(Color.FromArgb(215, 215, 215))) g.FillRectangle(b, 5.5f, 6.5f, 14f, 3f);        // a title on it
+                using (var b = new SolidBrush(Color.FromArgb(40, 110, 200)))
+                {
+                    // along the width, below the slide
+                    g.FillRectangle(b, 5.5f, 24.75f, 14f, 1.5f);
+                    g.FillPolygon(b, new[] { new PointF(2.5f, 25.5f), new PointF(6.5f, 22.5f), new PointF(6.5f, 28.5f) });
+                    g.FillPolygon(b, new[] { new PointF(22.5f, 25.5f), new PointF(18.5f, 22.5f), new PointF(18.5f, 28.5f) });
+                    // along the height, to the right of it
+                    g.FillRectangle(b, 26.75f, 6.5f, 1.5f, 9f);
+                    g.FillPolygon(b, new[] { new PointF(27.5f, 3.5f), new PointF(24.5f, 7.5f), new PointF(30.5f, 7.5f) });
+                    g.FillPolygon(b, new[] { new PointF(27.5f, 18.5f), new PointF(24.5f, 14.5f), new PointF(30.5f, 14.5f) });
+                }
+            }
+            return bmp;
+        }
+
+        /// <summary>A sheet of paper being pressed together from above and below: "slim down", 32 logical pixels.</summary>
+        public static Bitmap Slim()
+        {
+            Graphics g; float s;
+            Bitmap bmp = Canvas(32, out g, out s);
+            using (g)
+            {
+                using (var page = new GraphicsPath())
+                {
+                    page.AddPolygon(new[] { new PointF(6.5f, 1.5f), new PointF(19.5f, 1.5f), new PointF(26.5f, 8.5f), new PointF(26.5f, 30.5f), new PointF(6.5f, 30.5f) });
+                    g.FillPath(Brushes.White, page);
+                    using (var pen = new Pen(Color.FromArgb(120, 120, 120), 1f)) g.DrawPath(pen, page);
+                }
+                using (var fold = new GraphicsPath())
+                {
+                    fold.AddPolygon(new[] { new PointF(19.5f, 1.5f), new PointF(19.5f, 8.5f), new PointF(26.5f, 8.5f) });
+                    using (var b = new SolidBrush(Color.FromArgb(215, 215, 215))) g.FillPath(b, fold);
+                    using (var pen = new Pen(Color.FromArgb(120, 120, 120), 1f)) g.DrawPath(pen, fold);
+                }
+                // two arrows pressing against a line in the middle
+                using (var b = new SolidBrush(Color.FromArgb(40, 110, 200)))
+                {
+                    g.FillRectangle(b, 15f, 9.5f, 3f, 3.5f);
+                    g.FillPolygon(b, new[] { new PointF(12f, 12.5f), new PointF(21f, 12.5f), new PointF(16.5f, 17.5f) });
+                    g.FillRectangle(b, 10f, 18.75f, 13f, 1.5f);
+                    g.FillPolygon(b, new[] { new PointF(12f, 26.5f), new PointF(21f, 26.5f), new PointF(16.5f, 21.5f) });
+                    g.FillRectangle(b, 15f, 26f, 3f, 3f);
+                }
+            }
+            return bmp;
+        }
+
         /// <summary>Checkerboard = "no background".</summary>
         public static Bitmap Checker(int logical)
         {
@@ -245,6 +303,50 @@ namespace PptSelectionExport
             return bmp;
         }
 
+        // ------------------------------------------------------------ stacking order
+
+        /// <summary>
+        /// Glyph of a stacking-order button: overlapping squares with the one that moves in full red.
+        /// Three squares for "to front / to back" (all the way), two for "forward / backward" (one step).
+        /// </summary>
+        public static Bitmap Order(OrderCommand cmd, int logical)
+        {
+            int px = (int)Math.Round(logical * Scale);
+            float u = px / 16f;
+            var bmp = new Bitmap(px, px, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            using (var red = new SolidBrush(AlignRed))
+            using (var light = new SolidBrush(Color.FromArgb(250, 168, 168)))
+            {
+                g.SmoothingMode = SmoothingMode.None;
+                switch (cmd)      // drawn back to front; the square drawn last is on top
+                {
+                    case OrderCommand.BringToFront:
+                        Layer(g, light, R(1, 1, 8, 8), u); Layer(g, light, R(4, 4, 8, 8), u); Layer(g, red, R(7, 7, 8, 8), u);
+                        break;
+                    case OrderCommand.SendToBack:
+                        Layer(g, red, R(1, 1, 8, 8), u); Layer(g, light, R(4, 4, 8, 8), u); Layer(g, light, R(7, 7, 8, 8), u);
+                        break;
+                    case OrderCommand.BringForward:
+                        Layer(g, light, R(1, 1, 9, 9), u); Layer(g, red, R(6, 6, 9, 9), u);
+                        break;
+                    default:
+                        Layer(g, red, R(1, 1, 9, 9), u); Layer(g, light, R(6, 6, 9, 9), u);
+                        break;
+                }
+            }
+            return bmp;
+        }
+
+        /// <summary>A square that lies on top of what was drawn before: a thin gap is cut around it first.</summary>
+        private static void Layer(Graphics g, Brush b, float[] r, float unit)
+        {
+            g.CompositingMode = CompositingMode.SourceCopy;
+            using (var clear = new SolidBrush(Color.Transparent)) FillUnits(g, clear, R(r[0] - 1, r[1] - 1, r[2] + 2, r[3] + 2), unit);
+            g.CompositingMode = CompositingMode.SourceOver;
+            FillUnits(g, b, r, unit);
+        }
+
         // ------------------------------------------------------------ shape style
 
         /// <summary>
@@ -300,6 +402,81 @@ namespace PptSelectionExport
             return Glyph(logical, R(1, 2, 14, 2),
                 R(1, 7, 4, 2), R(6, 7, 4, 2), R(11, 7, 4, 2),
                 R(1, 12, 2, 2), R(5, 12, 2, 2), R(9, 12, 2, 2), R(13, 12, 2, 2));
+        }
+
+        // Cap types are drawn the way drawing programs show them: the stroke in a pale tone, and on
+        // top of it the line itself with a dot on its end point. A flat cap stops at the dot, a
+        // square or a round one reaches half the stroke's thickness past it.
+        private static readonly Color CapStroke = Color.FromArgb(105, AlignRed);
+
+        /// <summary>Glyph of "cap type": the end of a thick line with a round cap.</summary>
+        public static Bitmap Cap(int logical)
+        {
+            int px = (int)Math.Round(logical * Scale);
+            float u = px / 16f;
+            var bmp = new Bitmap(px, px, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            using (var red = new SolidBrush(AlignRed))
+            using (var pale = new SolidBrush(CapStroke))
+            {
+                int x0, x1, y0, y1;
+                SnapSpan(0, 9, u, out x0, out x1);           // the line itself ends at x = 9
+                SnapSpan(3, 10, u, out y0, out y1);
+                FillCapShape(g, pale, x0, x1, y0, y1 - y0, CapKind.Round, false);
+                g.SmoothingMode = SmoothingMode.None;
+                g.PixelOffsetMode = PixelOffsetMode.Default;
+                FillUnits(g, red, R(0, 7, 9, 2), u);
+                FillUnits(g, red, R(7, 6, 4, 4), u);
+            }
+            return bmp;
+        }
+
+        /// <summary>A thick line with the given cap at both ends, for the cap list.</summary>
+        public static Bitmap CapPreview(int logicalWidth, int logicalHeight, CapKind cap)
+        {
+            int w = (int)Math.Round(logicalWidth * Scale), h = (int)Math.Round(logicalHeight * Scale);
+            var bmp = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            using (var red = new SolidBrush(AlignRed))
+            using (var pale = new SolidBrush(CapStroke))
+            {
+                int half = Math.Max(3, (int)Math.Round(5 * Scale)), t = 2 * half;      // an even thickness: half of it is whole pixels
+                int y = (h - t) / 2;
+                int x0 = (int)Math.Round(24 * Scale), x1 = w - x0;                     // where the line itself starts and ends
+                FillCapShape(g, pale, x0, x1, y, t, cap, true);
+
+                g.SmoothingMode = SmoothingMode.None;
+                g.PixelOffsetMode = PixelOffsetMode.Default;
+                int core = 2 * Math.Max(1, (int)Math.Round(Scale)), dot = 2 * core;    // the line itself, and its end points
+                g.FillRectangle(red, x0, y + half - core / 2, x1 - x0, core);
+                g.FillRectangle(red, x0 - dot / 2, y + half - dot / 2, dot, dot);
+                g.FillRectangle(red, x1 - dot / 2, y + half - dot / 2, dot, dot);
+            }
+            return bmp;
+        }
+
+        /// <summary>A stroke from x0 to x1, <paramref name="t"/> thick, with the cap at its right end and, if wanted, at its left end.</summary>
+        private static void FillCapShape(Graphics g, Brush b, int x0, int x1, int y, int t, CapKind cap, bool bothEnds)
+        {
+            int half = t / 2;
+            if (cap != CapKind.Round)
+            {
+                int extra = cap == CapKind.Square ? half : 0;
+                g.SmoothingMode = SmoothingMode.None;
+                g.FillRectangle(b, x0 - (bothEnds ? extra : 0), y, x1 - x0 + (bothEnds ? 2 : 1) * extra, t);
+                return;
+            }
+            // one outline, so that the pale tone is not laid on twice where the parts would overlap
+            using (var path = new GraphicsPath())
+            {
+                if (bothEnds) path.AddArc(x0 - half, y, t, t, 90, 180);
+                else path.AddLine(x0, y + t, x0, y);
+                path.AddArc(x1 - half, y, t, t, -90, 180);
+                path.CloseFigure();
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.PixelOffsetMode = PixelOffsetMode.Half;
+                g.FillPath(b, path);
+            }
         }
 
         /// <summary>One cell of a colour grid.</summary>

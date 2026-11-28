@@ -28,6 +28,14 @@ namespace PptSelectionExport
         public bool OutlineNone = false;
         public float OutlineWeight = 1.5f;
         public int OutlineDash = 0;
+        /// <summary>Index into LineCaps.Caps; PowerPoint draws new lines with flat caps.</summary>
+        public int OutlineCap = 2;
+        /// <summary>"Slim down": pixels per inch the pictures keep (0 = all of them), JPEG quality, and whether photos may turn from PNG into JPEG.</summary>
+        public int SlimPpi = 220;
+        public int SlimQuality = 80;
+        public bool SlimToJpeg = true;
+        /// <summary>"Slide size": whether typing a width changes the height along with it.</summary>
+        public bool SizeLockRatio = false;
         /// <summary>Colours chosen in the colour picker, most recent first.</summary>
         public readonly List<Color> RecentColors = new List<Color>();
         private const int MaxRecent = 12;
@@ -68,6 +76,14 @@ namespace PptSelectionExport
                         && weight >= StyleTools.MinWeight && weight <= StyleTools.MaxWeight) s.OutlineWeight = weight;
                     int dash = Convert.ToInt32(k.GetValue("OutlineDash", 0), CultureInfo.InvariantCulture);
                     if (dash >= 0 && dash < StyleTools.Dashes.Length) s.OutlineDash = dash;
+                    int cap = Convert.ToInt32(k.GetValue("OutlineCap", 2), CultureInfo.InvariantCulture);
+                    if (cap >= 0 && cap < LineCaps.Caps.Length) s.OutlineCap = cap;
+                    int slimPpi = Convert.ToInt32(k.GetValue("SlimPpi", 220), CultureInfo.InvariantCulture);
+                    if (slimPpi == 0 || (slimPpi >= 72 && slimPpi <= 600)) s.SlimPpi = slimPpi;
+                    int slimQuality = Convert.ToInt32(k.GetValue("SlimQuality", 80), CultureInfo.InvariantCulture);
+                    if (slimQuality >= 30 && slimQuality <= 100) s.SlimQuality = slimQuality;
+                    s.SlimToJpeg = Convert.ToInt32(k.GetValue("SlimToJpeg", 1), CultureInfo.InvariantCulture) != 0;
+                    s.SizeLockRatio = Convert.ToInt32(k.GetValue("SizeLockRatio", 0), CultureInfo.InvariantCulture) != 0;
                     int dpi = Convert.ToInt32(k.GetValue("Dpi", 300), CultureInfo.InvariantCulture);
                     if (dpi >= 48 && dpi <= 1200) s.Dpi = dpi;
                     Color c;
@@ -98,6 +114,11 @@ namespace PptSelectionExport
                     k.SetValue("OutlineNone", OutlineNone ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("OutlineWeight", OutlineWeight.ToString("0.##", CultureInfo.InvariantCulture), RegistryValueKind.String);
                     k.SetValue("OutlineDash", OutlineDash, RegistryValueKind.DWord);
+                    k.SetValue("OutlineCap", OutlineCap, RegistryValueKind.DWord);
+                    k.SetValue("SlimPpi", SlimPpi, RegistryValueKind.DWord);
+                    k.SetValue("SlimQuality", SlimQuality, RegistryValueKind.DWord);
+                    k.SetValue("SlimToJpeg", SlimToJpeg ? 1 : 0, RegistryValueKind.DWord);
+                    k.SetValue("SizeLockRatio", SizeLockRatio ? 1 : 0, RegistryValueKind.DWord);
                 }
             }
             catch { }

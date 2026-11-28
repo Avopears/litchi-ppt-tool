@@ -113,7 +113,7 @@ namespace PptSelectionExport
         }
 
         /// <summary>The shapes themselves, with every group replaced by the shapes inside it.</summary>
-        private static List<PowerPoint.Shape> Leaves(PowerPoint.ShapeRange range)
+        internal static List<PowerPoint.Shape> Leaves(PowerPoint.ShapeRange range)
         {
             var list = new List<PowerPoint.Shape>();
             int n = range.Count;

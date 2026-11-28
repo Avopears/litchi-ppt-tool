@@ -72,6 +72,7 @@ namespace PptSelectionExport
         protected override void OnMouseDown(MouseEventArgs e) { if (e.Button == MouseButtons.Left) { _down = true; Focus(); Invalidate(); } base.OnMouseDown(e); }
         protected override void OnMouseUp(MouseEventArgs e) { _down = false; Invalidate(); base.OnMouseUp(e); }
         protected override void OnTextChanged(EventArgs e) { Invalidate(); base.OnTextChanged(e); }
+        protected override void OnEnabledChanged(EventArgs e) { _hover = _down = false; Invalidate(); base.OnEnabledChanged(e); }
         protected override void OnGotFocus(EventArgs e) { Invalidate(); base.OnGotFocus(e); }
         protected override void OnLostFocus(EventArgs e) { Invalidate(); base.OnLostFocus(e); }
         protected override bool IsInputKey(Keys keyData) { return keyData == Keys.Space || base.IsInputKey(keyData); }
@@ -88,7 +89,13 @@ namespace PptSelectionExport
             g.Clear(BackColor);
             var r = new RectangleF(0.5f, 0.5f, Width - 1f, Height - 1f);
             Color fill, text, border;
-            if (Primary)
+            if (!Enabled)
+            {
+                // a choice that stays selected while it cannot be changed keeps a trace of the accent
+                fill = Primary ? Color.FromArgb(226, 190, 180) : Color.FromArgb(250, 250, 250);
+                text = Primary ? Color.White : Color.FromArgb(170, 170, 170); border = Primary ? fill : Look.Line;
+            }
+            else if (Primary)
             {
                 fill = _down ? Look.AccentPressed : _hover ? Look.AccentHover : Look.Accent;
                 text = Color.White; border = fill;
@@ -208,12 +215,13 @@ namespace PptSelectionExport
     }
 
     /// <summary>
-    /// A colour picker in the style of current design tools: a saturation / brightness square,
-    /// a hue slider, hex and RGB fields, a palette and the colours used recently.
+    /// A colour picker in the style of current design tools: a hue ring around a
+    /// saturation / brightness square, hex and RGB fields, a palette and the colours used recently.
     /// </summary>
     internal sealed class ColorPickerForm : Form
     {
-        private const int W = 560, H = 556, BarH = 64, Pad = 24;
+        private const int W = 560, H = 586, BarH = 64, Pad = 24;
+        private const int WheelSize = 256, RingWidth = 20, WheelTop = 62;
         private const int SwatchSize = 28, SwatchColumns = 12;
 
         /// <summary>Two rows: plain colours, then soft tints that suit figure backgrounds.</summary>
@@ -234,7 +242,10 @@ namespace PptSelectionExport
         private readonly FieldBox _hex = new FieldBox(), _r = new FieldBox(), _g = new FieldBox(), _b = new FieldBox();
         private readonly FlatButton _ok = new FlatButton(), _cancel = new FlatButton();
 
-        private Rectangle _svRect, _hueRect, _previewRect;
+        private Rectangle _svRect, _wheelRect, _previewRect;
+        private PointF _wheelCenter;
+        private float _ringOuter, _ringInner;       // radii of the hue ring, in device pixels
+        private Bitmap _ringBitmap;
         private readonly List<KeyValuePair<Rectangle, Color>> _swatches = new List<KeyValuePair<Rectangle, Color>>();
         private int _paletteLabelY, _recentLabelY, _recentRowY, _hexLabelY, _rgbLabelY;
         private Font _titleFont, _labelFont, _fieldFont, _buttonFont;
@@ -341,20 +352,26 @@ namespace PptSelectionExport
             Size = new Size(Look.S(W), Look.S(H));
 
             _close.SetBounds(Look.S(W - 46) - 1, 1, Look.S(46), Look.S(34));
-            _svRect = R(Pad, 64, 300, 196);
-            _hueRect = R(Pad, 278, 300, 12);
+            // the hue ring, and inside it the largest square that leaves a little air to the ring
+            _wheelRect = R(Pad, WheelTop, WheelSize, WheelSize);
+            _wheelCenter = new PointF(_wheelRect.X + _wheelRect.Width / 2f, _wheelRect.Y + _wheelRect.Height / 2f);
+            _ringOuter = _wheelRect.Width / 2f;
+            _ringInner = _ringOuter - Look.S(RingWidth);
+            int half = (int)Math.Floor((_ringInner - Look.S(8)) / Math.Sqrt(2));
+            _svRect = new Rectangle((int)Math.Round(_wheelCenter.X) - half, (int)Math.Round(_wheelCenter.Y) - half, 2 * half, 2 * half);
+            if (_ringBitmap != null) { _ringBitmap.Dispose(); _ringBitmap = null; }
 
-            const int colX = 348, colW = W - Pad - colX;
-            _previewRect = R(colX, 64, colW, 52);
-            _hexLabelY = 146;
-            Place(_hex, colX, 166, colW, 34);
-            _rgbLabelY = 212;
+            const int colX = 316, colW = W - Pad - colX;
+            _previewRect = R(colX, 84, colW, 56);
+            _hexLabelY = 172;
+            Place(_hex, colX, 192, colW, 34);
+            _rgbLabelY = 240;
             int fw = (colW - 2 * 10) / 3;
-            Place(_r, colX, 232, fw, 34);
-            Place(_g, colX + fw + 10, 232, fw, 34);
-            Place(_b, colX + 2 * (fw + 10), 232, fw, 34);
+            Place(_r, colX, 260, fw, 34);
+            Place(_g, colX + fw + 10, 260, fw, 34);
+            Place(_b, colX + 2 * (fw + 10), 260, fw, 34);
 
-            _paletteLabelY = 314;
+            _paletteLabelY = 344;
             _swatches.Clear();
             int gap = (W - 2 * Pad - SwatchColumns * SwatchSize) / (SwatchColumns - 1);
             for (int i = 0; i < Palette.Length; i++)
@@ -362,10 +379,10 @@ namespace PptSelectionExport
                 Color c;
                 Settings.TryParseHex(Palette[i], out c);
                 int col = i % SwatchColumns, row = i / SwatchColumns;
-                _swatches.Add(new KeyValuePair<Rectangle, Color>(R(Pad + col * (SwatchSize + gap), 338 + row * (SwatchSize + 10), SwatchSize, SwatchSize), c));
+                _swatches.Add(new KeyValuePair<Rectangle, Color>(R(Pad + col * (SwatchSize + gap), 368 + row * (SwatchSize + 10), SwatchSize, SwatchSize), c));
             }
-            _recentLabelY = 422;
-            _recentRowY = 446;
+            _recentLabelY = 452;
+            _recentRowY = 476;
             for (int i = 0; i < _recent.Count && i < SwatchColumns; i++)
                 _swatches.Add(new KeyValuePair<Rectangle, Color>(R(Pad + i * (SwatchSize + gap), _recentRowY, SwatchSize, SwatchSize), _recent[i]));
 
@@ -411,6 +428,7 @@ namespace PptSelectionExport
             if (disposing)
             {
                 if (_svBitmap != null) _svBitmap.Dispose();
+                if (_ringBitmap != null) _ringBitmap.Dispose();
                 foreach (Font f in new[] { _titleFont, _labelFont, _fieldFont, _buttonFont }) if (f != null) f.Dispose();
             }
             base.Dispose(disposing);
@@ -492,16 +510,14 @@ namespace PptSelectionExport
         {
             base.OnMouseDown(e);
             if (e.Button != MouseButtons.Left) return;
-            int knob = Look.S(8);
-            Rectangle sv = Rectangle.Inflate(_svRect, knob, knob), hue = Rectangle.Inflate(_hueRect, knob, knob);
             int swatch = SwatchAt(e.Location);
             if (swatch >= 0)
             {
                 SetColor(_swatches[swatch].Value, null);
                 if (e.Clicks == 2) DialogResult = DialogResult.OK;
             }
-            else if (sv.Contains(e.Location)) { _drag = Drag.Sv; DragTo(e.Location); }
-            else if (hue.Contains(e.Location)) { _drag = Drag.Hue; DragTo(e.Location); }
+            else if (OnSquare(e.Location)) { _drag = Drag.Sv; DragTo(e.Location); }
+            else if (OnRing(e.Location)) { _drag = Drag.Hue; DragTo(e.Location); }
             else if (_previewRect.Contains(e.Location) && e.X >= _previewRect.X + _previewRect.Width / 2) SetColor(_original, null);   // back to the current colour
             else if (e.Y < Look.S(52)) MoveWindow();
             Focus();
@@ -513,8 +529,7 @@ namespace PptSelectionExport
             if (_drag != Drag.None) { DragTo(e.Location); return; }
             int swatch = SwatchAt(e.Location);
             if (swatch != _hoverSwatch) { _hoverSwatch = swatch; Invalidate(); }
-            int knob = Look.S(8);
-            bool hand = swatch >= 0 || Rectangle.Inflate(_svRect, knob, knob).Contains(e.Location) || Rectangle.Inflate(_hueRect, knob, knob).Contains(e.Location)
+            bool hand = swatch >= 0 || OnSquare(e.Location) || OnRing(e.Location)
                         || (_previewRect.Contains(e.Location) && e.X >= _previewRect.X + _previewRect.Width / 2);
             Cursor = hand ? Cursors.Hand : Cursors.Default;
         }
@@ -532,8 +547,45 @@ namespace PptSelectionExport
             }
             else if (_drag == Drag.Hue)
             {
-                SetHsv(Clamp01((p.X - _hueRect.X) / (float)(_hueRect.Width - 1)) * 359.99f, _s, _v);
+                float dx = p.X - _wheelCenter.X, dy = p.Y - _wheelCenter.Y;
+                if (dx * dx + dy * dy >= 1) SetHsv(HueAt(dx, dy), _s, _v);      // the very centre has no direction
             }
+        }
+
+        /// <summary>On the saturation / brightness square, with a margin the size of its handle.</summary>
+        private bool OnSquare(Point p)
+        {
+            int knob = Look.S(6);
+            return Rectangle.Inflate(_svRect, knob, knob).Contains(p);
+        }
+
+        /// <summary>On the hue ring, with a small margin on both sides.</summary>
+        private bool OnRing(Point p)
+        {
+            float dx = p.X - _wheelCenter.X, dy = p.Y - _wheelCenter.Y;
+            double d = Math.Sqrt(dx * dx + dy * dy);
+            int slack = Look.S(4);
+            return d >= _ringInner - slack && d <= _ringOuter + slack;
+        }
+
+        /// <summary>
+        /// Hue of the direction (dx, dy) from the centre of the ring, y pointing down.
+        /// Yellow is at the top and the hue grows clockwise: green upper right, cyan lower right,
+        /// blue at the bottom, magenta lower left, red upper left.
+        /// </summary>
+        internal static float HueAt(float dx, float dy)
+        {
+            double clockwiseFromTop = Math.Atan2(dx, -dy) * 180 / Math.PI;
+            double hue = (clockwiseFromTop + 60) % 360;
+            if (hue < 0) hue += 360;
+            return hue >= 360 ? 0 : (float)hue;
+        }
+
+        /// <summary>Where a hue sits on a ring of the given radius, relative to the centre (y pointing down).</summary>
+        internal static PointF HuePoint(float hue, float radius)
+        {
+            double a = (hue - 60) * Math.PI / 180;
+            return new PointF((float)(radius * Math.Sin(a)), (float)(-radius * Math.Cos(a)));
         }
 
         private int SwatchAt(Point p)
@@ -559,14 +611,22 @@ namespace PptSelectionExport
 
             TextRenderer.DrawText(g, Text, _titleFont, new Point(Look.S(Pad), Look.S(20)), Look.Text, TextFormatFlags.NoPadding);
 
-            // saturation / brightness square
+            // hue ring
+            if (_ringBitmap == null || _ringBitmap.Width != _wheelRect.Width)
+            {
+                if (_ringBitmap != null) _ringBitmap.Dispose();
+                _ringBitmap = MakeRingBitmap(_wheelRect.Width, _ringOuter, _ringInner);
+            }
+            g.DrawImageUnscaled(_ringBitmap, _wheelRect.X, _wheelRect.Y);
+
+            // saturation / brightness square inside the ring
             if (_svBitmap == null || _svBitmapHue != _h || _svBitmap.Size != _svRect.Size)
             {
                 if (_svBitmap != null) _svBitmap.Dispose();
                 _svBitmap = MakeSvBitmap(_svRect.Size, _h);
                 _svBitmapHue = _h;
             }
-            using (GraphicsPath p = Look.Round(_svRect, Look.S(6)))
+            using (GraphicsPath p = Look.Round(_svRect, Look.S(4)))
             using (var tb = new TextureBrush(_svBitmap, WrapMode.Clamp))
             {
                 tb.TranslateTransform(_svRect.X, _svRect.Y);
@@ -575,18 +635,9 @@ namespace PptSelectionExport
             }
             DrawKnob(g, new PointF(_svRect.X + _s * (_svRect.Width - 1), _svRect.Y + (1 - _v) * (_svRect.Height - 1)), Look.S(8), _color);
 
-            // hue slider
-            using (GraphicsPath p = Look.Round(_hueRect, _hueRect.Height / 2f))
-            using (var lb = new LinearGradientBrush(new Rectangle(_hueRect.X - 1, _hueRect.Y, _hueRect.Width + 2, _hueRect.Height), Color.Red, Color.Red, LinearGradientMode.Horizontal))
-            {
-                var blend = new ColorBlend(7);
-                blend.Colors = new[] { Color.FromArgb(255, 0, 0), Color.FromArgb(255, 255, 0), Color.FromArgb(0, 255, 0), Color.FromArgb(0, 255, 255),
-                                       Color.FromArgb(0, 0, 255), Color.FromArgb(255, 0, 255), Color.FromArgb(255, 0, 0) };
-                blend.Positions = new[] { 0f, 1f / 6, 2f / 6, 3f / 6, 4f / 6, 5f / 6, 1f };
-                lb.InterpolationColors = blend;
-                g.FillPath(lb, p);
-            }
-            DrawKnob(g, new PointF(_hueRect.X + _h / 360f * (_hueRect.Width - 1), _hueRect.Y + _hueRect.Height / 2f), Look.S(9), FromHsv(_h, 1, 1));
+            // the hue handle rides on the middle of the ring
+            PointF onRing = HuePoint(_h, (_ringOuter + _ringInner) / 2f);
+            DrawKnob(g, new PointF(_wheelCenter.X + onRing.X, _wheelCenter.Y + onRing.Y), Look.S(9), FromHsv(_h, 1, 1));
 
             // new | current
             using (GraphicsPath p = Look.Round(_previewRect, Look.S(6)))
@@ -683,6 +734,33 @@ namespace PptSelectionExport
                     g.FillRectangle(b, r);
                 }
             }
+            return bmp;
+        }
+
+        /// <summary>The hue ring: every hue once around, with smooth inner and outer edges.</summary>
+        private static Bitmap MakeRingBitmap(int size, float outer, float inner)
+        {
+            size = Math.Max(1, size);
+            var bmp = new Bitmap(size, size, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            var pixels = new int[size * size];
+            float c = size / 2f;
+            for (int y = 0; y < size; y++)
+            {
+                float dy = y + 0.5f - c;
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x + 0.5f - c;
+                    float d = (float)Math.Sqrt(dx * dx + dy * dy);
+                    float coverage = Math.Min(Clamp01(outer - d + 0.5f), Clamp01(d - inner + 0.5f));   // 1 inside the ring, fading over one pixel at its edges
+                    if (coverage <= 0) continue;
+                    Color hue = FromHsv(HueAt(dx, dy), 1, 1);
+                    pixels[y * size + x] = ((int)Math.Round(coverage * 255) << 24) | (hue.R << 16) | (hue.G << 8) | hue.B;
+                }
+            }
+            System.Drawing.Imaging.BitmapData data = bmp.LockBits(new Rectangle(0, 0, size, size),
+                System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            try { Marshal.Copy(pixels, 0, data.Scan0, pixels.Length); }
+            finally { bmp.UnlockBits(data); }
             return bmp;
         }
 

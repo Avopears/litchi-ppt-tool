@@ -70,7 +70,12 @@ namespace PptSelectionExport
             if (args.Length > 1 && args[1] == "align")
             {
                 app = new PowerPoint.Application();
-                try { AlignTests.Run(app); ShapeToolsTests.Run(app); StyleTests.Run(app); }
+                try
+                {
+                    if (args.Length > 2 && args[2] == "slim") SlimTests.Run(app);       // "align slim": only the slimming tests
+                    else if (args.Length > 2 && args[2] == "size") ResizeTests.Run(app);        // "align size": only the slide size tests
+                    else { AlignTests.Run(app); ShapeToolsTests.Run(app); StyleTests.Run(app); CapTests.Run(app); ResizeTests.Run(app); SlimTests.Run(app); }
+                }
                 finally { if (app.Presentations.Count == 0) app.Quit(); }
                 return;
             }
@@ -164,6 +169,9 @@ namespace PptSelectionExport
                 AlignTests.Run(app);
                 ShapeToolsTests.Run(app);
                 StyleTests.Run(app);
+                CapTests.Run(app);
+                ResizeTests.Run(app);
+                SlimTests.Run(app);
             }
             finally
             {

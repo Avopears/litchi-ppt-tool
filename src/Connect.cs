@@ -15,8 +15,8 @@ using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 [assembly: AssemblyTitle("PptSelectionExport")]
 [assembly: AssemblyDescription("PowerPoint add-in: export the selected objects as PDF / SVG / PNG / JPG, and align, rotate, merge or restyle them")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.6.0.0")]
-[assembly: AssemblyFileVersion("1.6.0.0")]
+[assembly: AssemblyVersion("1.7.0.0")]
+[assembly: AssemblyFileVersion("1.7.0.0")]
 [assembly: ComVisible(false)]
 
 namespace PptSelectionExport
@@ -97,7 +97,9 @@ namespace PptSelectionExport
                 AlignCommand cmd;
                 TransformCommand turn;
                 MergeCommand merge;
+                OrderCommand order;
                 if (AlignButtons.TryGetValue(control.Id, out cmd)) bmp = Icons.Align(cmd, 16);
+                else if (OrderButtons.TryGetValue(control.Id, out order)) bmp = Icons.Order(order, 16);
                 else if (TransformButtons.TryGetValue(control.Id, out turn)) bmp = Icons.Transform(turn, 16);
                 else if (MergeButtons.TryGetValue(control.Id, out merge)) bmp = Icons.Merge(merge, 16);
                 else switch (control.Id)
@@ -105,6 +107,8 @@ namespace PptSelectionExport
                     case "btnPdf": bmp = Icons.Document("PDF", Color.FromArgb(212, 48, 40)); break;
                     case "btnSvg": bmp = Icons.Document("SVG", Color.FromArgb(234, 138, 20)); break;
                     case "btnImage": bmp = Icons.Document("PNG", Color.FromArgb(30, 136, 90)); break;
+                    case "btnSlim": bmp = Icons.Slim(); break;
+                    case "btnSlideSize": bmp = Icons.SlideSize(); break;
                     case "tglTransparent": bmp = Icons.Checker(32); break;
                     case "tglColor": bmp = Icons.Swatch(_settings.Color, 32); break;
                     case "btnMoreColors": bmp = Icons.Palette(16); break;
@@ -113,11 +117,13 @@ namespace PptSelectionExport
                     case "grpAlign": bmp = Icons.Align(AlignCommand.Left, 32); break;
                     case "grpRotate": bmp = Icons.Transform(TransformCommand.RotateRight, 32); break;
                     case "grpMerge": bmp = Icons.Merge(MergeCommand.Union, 32); break;
+                    case "grpOrder": bmp = Icons.Order(OrderCommand.BringToFront, 32); break;
                     // shape style: the buttons show what they applied last
                     case "galFill": bmp = Icons.StyleColor(false, _settings.FillNone ? (Color?)null : _settings.FillColor, 16); break;
                     case "galOutline": bmp = Icons.StyleColor(true, _settings.OutlineNone ? (Color?)null : _settings.OutlineColor, 16); break;
                     case "galWeight": bmp = Icons.Weight(16); break;
                     case "galDash": bmp = Icons.Dashes(16); break;
+                    case "galCap": bmp = Icons.Cap(16); break;
                     case "btnFillNone":
                     case "btnOutlineNone": bmp = Icons.NoColor(16); break;
                     case "btnFillMore":
@@ -336,6 +342,108 @@ namespace PptSelectionExport
             }
         }
 
+        // ------------------------------------------------------------ slide size
+
+        /// <summary>Asks for a slide size in centimetres and scales what is on the slides to fit it, as one undo step.</summary>
+        public void OnSlideSize(Office.IRibbonControl control)
+        {
+            IWin32Window owner = Owner();
+            PowerPoint.Presentation pres = null;
+            try { pres = _app.ActivePresentation; } catch { }
+            if (pres == null)
+            {
+                Info(owner, Strings.T("msg.slim.nowindow"), "size.title");
+                return;
+            }
+            try
+            {
+                float width, height;
+                using (var dlg = new SlideSizeForm(pres.PageSetup.SlideWidth, pres.PageSetup.SlideHeight, _settings, owner))
+                {
+                    if (dlg.ShowDialog(owner) != DialogResult.OK) return;
+                    width = dlg.WidthPoints;
+                    height = dlg.HeightPoints;
+                }
+                Cursor old = Cursor.Current;
+                Cursor.Current = Cursors.WaitCursor;
+                try
+                {
+                    StartUndoEntry();
+                    SlideResizer.Resize(pres, width, height);
+                }
+                finally { Cursor.Current = old; }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(owner, Strings.T("msg.size.failed", ex.Message), Strings.T("size.title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        // ------------------------------------------------------------ slim down
+
+        /// <summary>
+        /// Opens the "slim down" window on a temporary copy of the active presentation (as it is
+        /// now, unsaved changes included). The window compresses that copy and saves the result
+        /// under a new name; the open presentation is not touched.
+        /// </summary>
+        public void OnSlim(Office.IRibbonControl control)
+        {
+            IWin32Window owner = Owner();
+            PowerPoint.Presentation pres = null;
+            try { pres = _app.ActivePresentation; } catch { }
+            if (pres == null)
+            {
+                Info(owner, Strings.T("msg.slim.nowindow"), "slim.title");
+                return;
+            }
+
+            string dir = Exporter.NewTempDir();
+            try
+            {
+                // a presentation with macros stays one: as .pptx the copy would lose them
+                bool macros = false;
+                try { macros = pres.HasVBProject; } catch { }
+                string input = Path.Combine(dir, macros ? "input.pptm" : "input.pptx");
+                Cursor old = Cursor.Current;
+                Cursor.Current = Cursors.WaitCursor;
+                try
+                {
+                    pres.SaveCopyAs(input, macros ? PowerPoint.PpSaveAsFileType.ppSaveAsOpenXMLPresentationMacroEnabled
+                                                  : PowerPoint.PpSaveAsFileType.ppSaveAsOpenXMLPresentation, Office.MsoTriState.msoFalse);
+                }
+                finally { Cursor.Current = old; }
+
+                string name = Strings.T("name.selection"), original = "", folder = null;
+                try { name = Path.GetFileNameWithoutExtension(pres.Name); } catch { }
+                foreach (char c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '_');
+                try
+                {
+                    string p = pres.Path;       // empty for a presentation that was never saved, a URL for one in the cloud
+                    if (!string.IsNullOrEmpty(p) && p.IndexOf("://", StringComparison.Ordinal) < 0 && Directory.Exists(p))
+                    {
+                        folder = p;
+                        original = Path.GetFullPath(pres.FullName);
+                    }
+                }
+                catch { }
+                if (folder == null)
+                    folder = !string.IsNullOrEmpty(_settings.LastDir) && Directory.Exists(_settings.LastDir) ? _settings.LastDir
+                           : Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+
+                using (var dlg = new SlimForm(input, dir, name, folder, original, _settings, owner)) dlg.ShowDialog(owner);
+            }
+            catch (InvalidDataException)
+            {
+                // the copy is not a zip package: PowerPoint encrypts a presentation that has a password to open
+                Info(owner, Strings.T("err.cap.copy"), "slim.title");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(owner, Strings.T("msg.slim.failed", ex.Message), Strings.T("slim.title"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            finally { Exporter.TryDeleteDir(dir); }
+        }
+
         // ------------------------------------------------------------ align
 
         private static readonly Dictionary<string, AlignCommand> AlignButtons = new Dictionary<string, AlignCommand>
@@ -422,6 +530,39 @@ namespace PptSelectionExport
             catch (Exception ex)
             {
                 MessageBox.Show(owner, Strings.T("msg.shape.failed", ex.Message), Strings.T("title.rotate"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        private static readonly Dictionary<string, OrderCommand> OrderButtons = new Dictionary<string, OrderCommand>
+        {
+            { "btnBringToFront", OrderCommand.BringToFront },
+            { "btnBringForward", OrderCommand.BringForward },
+            { "btnSendToBack", OrderCommand.SendToBack },
+            { "btnSendBackward", OrderCommand.SendBackward },
+        };
+
+        /// <summary>Stacking order: to front, to back, one step forward, one step backward.</summary>
+        public void OnOrder(Office.IRibbonControl control)
+        {
+            OrderCommand cmd;
+            if (!OrderButtons.TryGetValue(control.Id, out cmd)) return;
+            IWin32Window owner = Owner();
+            bool isChild = false;
+            try
+            {
+                PowerPoint.DocumentWindow win;
+                PowerPoint.Selection sel;
+                PowerPoint.ShapeRange range = SelectedShapes(owner, "title.order", "msg.shape.nowindow", "msg.shape.noselection", out win, out sel, out isChild);
+                if (range == null) return;
+                StartUndoEntry();
+                // The object model cannot reorder shapes inside a group; PowerPoint's own command can.
+                if (isChild) _app.CommandBars.ExecuteMso(ShapeTools.OrderMso(cmd));
+                else ShapeTools.Order(range, cmd);
+            }
+            catch (Exception ex)
+            {
+                string text = isChild ? Strings.T("msg.order.child") : Strings.T("msg.shape.failed", ex.Message);
+                MessageBox.Show(owner, text, Strings.T("title.order"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
@@ -632,6 +773,42 @@ namespace PptSelectionExport
             RefreshStyle("galDash");
         }
 
+        private static readonly string[] CapKeys = { "cap.square", "cap.round", "cap.flat" };
+
+        public int GetCapCount(Office.IRibbonControl control) { return LineCaps.Caps.Length; }
+        public string GetCapId(Office.IRibbonControl control, int index) { return "cap" + index; }
+        public string GetCapLabel(Office.IRibbonControl control, int index) { return Strings.T(CapKeys[index]); }
+        public int GetCapIndex(Office.IRibbonControl control) { return _settings.OutlineCap; }
+
+        public object GetCapImage(Office.IRibbonControl control, int index)
+        {
+            try
+            {
+                using (Bitmap bmp = Icons.CapPreview(LineItemWidth, LineItemHeight, LineCaps.Caps[index])) return Icons.ToPictureDisp(bmp);
+            }
+            catch { return null; }
+        }
+
+        public void OnCapPicked(Office.IRibbonControl control, string selectedId, int selectedIndex)
+        {
+            if (selectedIndex < 0 || selectedIndex >= LineCaps.Caps.Length) return;
+            CapKind cap = LineCaps.Caps[selectedIndex];
+            bool applied = ApplyStyle(range =>
+            {
+                // it works through a temporary copy of the presentation, which takes a moment for a large file
+                Cursor old = Cursor.Current;
+                Cursor.Current = Cursors.WaitCursor;
+                try { return LineCaps.SetCap(_app, range, cap); }
+                finally { Cursor.Current = old; }
+            });
+            if (applied)
+            {
+                _settings.OutlineCap = selectedIndex;
+                _settings.Save();
+            }
+            RefreshStyle("galCap");
+        }
+
         /// <summary>
         /// Applies one style setting to the selected shapes, as a single undo step.
         /// False (after telling the user why) when nothing was changed.
@@ -649,6 +826,10 @@ namespace PptSelectionExport
                 StartUndoEntry();
                 if (change(range) > 0) return true;
                 Info(owner, Strings.T("msg.style.none"), "title.style");
+            }
+            catch (StyleNotice notice)
+            {
+                Info(owner, notice.Message, "title.style");
             }
             catch (Exception ex)
             {

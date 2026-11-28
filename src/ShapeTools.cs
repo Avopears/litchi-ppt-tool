@@ -9,6 +9,9 @@ namespace PptSelectionExport
 
     internal enum MergeCommand { Union, Combine, Subtract, Fragment }
 
+    /// <summary>The four stacking-order commands of PowerPoint's Arrange menu.</summary>
+    internal enum OrderCommand { BringToFront, SendToBack, BringForward, SendBackward }
+
     internal enum MergeResult
     {
         Done,
@@ -30,6 +33,37 @@ namespace PptSelectionExport
                 case TransformCommand.RotateRight: range.IncrementRotation(90f); break;
                 case TransformCommand.FlipHorizontal: range.Flip(Office.MsoFlipCmd.msoFlipHorizontal); break;
                 case TransformCommand.FlipVertical: range.Flip(Office.MsoFlipCmd.msoFlipVertical); break;
+            }
+        }
+
+        /// <summary>
+        /// Moves the shapes in the stacking order, like PowerPoint's own commands: several selected
+        /// shapes keep their order among themselves and move together.
+        /// Shapes selected inside a group do not react to this; use <see cref="OrderMso"/> for those.
+        /// </summary>
+        public static void Order(PowerPoint.ShapeRange range, OrderCommand cmd)
+        {
+            switch (cmd)
+            {
+                case OrderCommand.BringToFront: range.ZOrder(Office.MsoZOrderCmd.msoBringToFront); break;
+                case OrderCommand.SendToBack: range.ZOrder(Office.MsoZOrderCmd.msoSendToBack); break;
+                case OrderCommand.BringForward: range.ZOrder(Office.MsoZOrderCmd.msoBringForward); break;
+                default: range.ZOrder(Office.MsoZOrderCmd.msoSendBackward); break;
+            }
+        }
+
+        /// <summary>
+        /// Name of PowerPoint's built-in command for the same thing. It acts on the selection in the
+        /// active window and, unlike <see cref="Order"/>, also reorders shapes inside a group.
+        /// </summary>
+        public static string OrderMso(OrderCommand cmd)
+        {
+            switch (cmd)
+            {
+                case OrderCommand.BringToFront: return "ObjectBringToFront";
+                case OrderCommand.SendToBack: return "ObjectSendToBack";
+                case OrderCommand.BringForward: return "ObjectBringForward";
+                default: return "ObjectSendBackward";
             }
         }
 
