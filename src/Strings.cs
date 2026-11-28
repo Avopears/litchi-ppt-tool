@@ -125,6 +125,40 @@ namespace PptSelectionExport
             { "merge.fragment.label", new[] { "拆分", "Fragment" } },
             { "merge.fragment.super", new[] { "沿所有形状的轮廓，把它们切成多个独立的形状。" + MergeRefZh, "Cuts the shapes apart along all their outlines into separate pieces." + MergeRefEn } },
 
+            // ---- ribbon: shape style
+            { "grp.style", new[] { "样式", "Style" } },
+            { "style.fill.label", new[] { "填充", "Fill" } },
+            { "style.fill.tip", new[] { "形状填充颜色", "Shape fill color" } },
+            { "style.fill.super", new[] {
+                "给选中的形状换填充颜色：点色块立即生效。下面是“无填充”和“其他颜色…”（打开选色窗口，可以输入色值）。线条没有填充，会被跳过；组合里的每个形状都会改。",
+                "Changes the fill color of the selected shapes: click a swatch to apply it. Below are No Fill and More Colors… (opens the color picker, where you can type a value). Lines have no fill and are skipped; every shape inside a group is changed." } },
+            { "style.fill.none", new[] { "无填充", "No Fill" } },
+            { "style.outline.label", new[] { "轮廓", "Outline" } },
+            { "style.outline.tip", new[] { "轮廓 / 线条颜色", "Outline / line color" } },
+            { "style.outline.super", new[] {
+                "给选中的形状换轮廓颜色，对线条和连接线就是线条本身的颜色：点色块立即生效。下面是“无轮廓”和“其他颜色…”。",
+                "Changes the outline color of the selected shapes; for lines and connectors that is the color of the line itself. Click a swatch to apply it. Below are No Outline and More Colors…." } },
+            { "style.outline.none", new[] { "无轮廓", "No Outline" } },
+            { "style.weight.label", new[] { "粗细", "Weight" } },
+            { "style.weight.tip", new[] { "轮廓 / 线条粗细", "Outline / line weight" } },
+            { "style.weight.super", new[] {
+                "设置选中形状的轮廓粗细（线条的粗细），单位是磅。列表里没有想要的数值时，点“其他粗细…”自己输入。原来没有轮廓的形状会显示出轮廓。",
+                "Sets the outline weight of the selected shapes (the thickness of lines), in points. Choose More Weights… to type a value that is not in the list. A shape that had no outline gets one." } },
+            { "style.weight.more", new[] { "其他粗细…", "More Weights…" } },
+            { "style.dash.label", new[] { "虚线", "Dashes" } },
+            { "style.dash.tip", new[] { "轮廓 / 线条的虚线类型", "Outline / line dash type" } },
+            { "style.dash.super", new[] {
+                "把选中形状的轮廓（或线条）改成实线、圆点、方点、短划线等类型。",
+                "Makes the outline of the selected shapes (or the line) solid, dotted, dashed and so on." } },
+            { "dash.solid", new[] { "实线", "Solid" } },
+            { "dash.rounddot", new[] { "圆点", "Round Dot" } },
+            { "dash.squaredot", new[] { "方点", "Square Dot" } },
+            { "dash.dash", new[] { "短划线", "Dash" } },
+            { "dash.dashdot", new[] { "划线-点", "Dash Dot" } },
+            { "dash.longdash", new[] { "长划线", "Long Dash" } },
+            { "dash.longdashdot", new[] { "长划线-点", "Long Dash Dot" } },
+            { "dash.longdashdotdot", new[] { "长划线-点-点", "Long Dash Dot Dot" } },
+
             { "toobject.label", new[] { "对齐到对象", "Align to Object" } },
             { "toobject.super", new[] {
                 "打开后，对齐和分布以第一个选中的对象为参照，它本身不动。先单击作为参照的对象，再按住 Shift 或 Ctrl 单击其他对象，然后点对齐或分布按钮。分布时，其他对象在参照对象的范围内等距排开，适合把几个对象均匀地放进一个框里。",
@@ -187,7 +221,19 @@ namespace PptSelectionExport
                 "无法对这些对象做布尔运算：\n{0}\n\n表格、图表、SmartArt 等对象不能参与布尔运算。",
                 "These objects cannot be merged:\n{0}\n\nTables, charts, SmartArt and similar objects cannot take part in merging." } },
 
+            { "title.style", new[] { "样式", "Style" } },
+            { "msg.style.none", new[] {
+                "选中的对象里没有可以这样设置的形状。\n（线条没有填充；表格、图表等对象请用 PowerPoint 自带的格式工具。）",
+                "None of the selected objects can take this setting.\n(Lines have no fill; for tables, charts and similar objects use PowerPoint's own format tools.)" } },
+
+            // ---- weight dialog
+            { "weight.title", new[] { "线条粗细", "Line weight" } },
+            { "weight.caption", new[] { "粗细（磅）", "Weight (points)" } },
+            { "weight.hint", new[] { "请输入 0.05 到 100 之间的数值，例如 1.25", "Enter a value from 0.05 to 100, for example 1.25" } },
+
             // ---- colour picker
+            { "picker.fill", new[] { "填充颜色", "Fill color" } },
+            { "picker.outline", new[] { "轮廓颜色", "Outline color" } },
             { "picker.title", new[] { "背景颜色", "Background color" } },
             { "picker.new", new[] { "新颜色", "New" } },
             { "picker.current", new[] { "当前", "Current" } },

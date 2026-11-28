@@ -100,6 +100,37 @@
                     screentip="{{merge.fragment.label}}" supertip="{{merge.fragment.super}}" />
           </box>
         </group>
+        <!-- fill and outline of the selected shapes: two rows of two drop-down lists -->
+        <group id="grpStyle" label="{{grp.style}}" getImage="GetImage">
+          <box id="boxStyleColor" boxStyle="horizontal">
+            <gallery id="galFill" label="{{style.fill.label}}" getImage="GetImage" columns="12" itemWidth="18" itemHeight="18"
+                     showItemLabel="false" getItemCount="GetColorCount" getItemID="GetColorId" getItemImage="GetColorImage"
+                     getItemScreentip="GetColorTip" getSelectedItemIndex="GetColorIndex" onAction="OnColorPicked"
+                     screentip="{{style.fill.tip}}" supertip="{{style.fill.super}}">
+              <button id="btnFillNone" label="{{style.fill.none}}" getImage="GetImage" onAction="OnStyleButton" />
+              <button id="btnFillMore" label="{{color.more}}" getImage="GetImage" onAction="OnStyleButton" />
+            </gallery>
+            <gallery id="galOutline" label="{{style.outline.label}}" getImage="GetImage" columns="12" itemWidth="18" itemHeight="18"
+                     showItemLabel="false" getItemCount="GetColorCount" getItemID="GetColorId" getItemImage="GetColorImage"
+                     getItemScreentip="GetColorTip" getSelectedItemIndex="GetColorIndex" onAction="OnColorPicked"
+                     screentip="{{style.outline.tip}}" supertip="{{style.outline.super}}">
+              <button id="btnOutlineNone" label="{{style.outline.none}}" getImage="GetImage" onAction="OnStyleButton" />
+              <button id="btnOutlineMore" label="{{color.more}}" getImage="GetImage" onAction="OnStyleButton" />
+            </gallery>
+          </box>
+          <box id="boxStyleLine" boxStyle="horizontal">
+            <gallery id="galWeight" label="{{style.weight.label}}" getImage="GetImage" columns="1" itemWidth="96" itemHeight="18"
+                     showItemLabel="true" getItemCount="GetWeightCount" getItemID="GetWeightId" getItemImage="GetWeightImage"
+                     getItemLabel="GetWeightLabel" getSelectedItemIndex="GetWeightIndex" onAction="OnWeightPicked"
+                     screentip="{{style.weight.tip}}" supertip="{{style.weight.super}}">
+              <button id="btnWeightMore" label="{{style.weight.more}}" onAction="OnStyleButton" />
+            </gallery>
+            <gallery id="galDash" label="{{style.dash.label}}" getImage="GetImage" columns="1" itemWidth="96" itemHeight="18"
+                     showItemLabel="true" getItemCount="GetDashCount" getItemID="GetDashId" getItemImage="GetDashImage"
+                     getItemLabel="GetDashLabel" getSelectedItemIndex="GetDashIndex" onAction="OnDashPicked"
+                     screentip="{{style.dash.tip}}" supertip="{{style.dash.super}}" />
+          </box>
+        </group>
       </tab>
     </tabs>
   </ribbon>

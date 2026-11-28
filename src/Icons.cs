@@ -245,6 +245,148 @@ namespace PptSelectionExport
             return bmp;
         }
 
+        // ------------------------------------------------------------ shape style
+
+        /// <summary>
+        /// "Fill" (a solid square) or "outline" (a frame) above a bar in the colour that is
+        /// current for it; the bar is empty with a red stroke for "none".
+        /// </summary>
+        public static Bitmap StyleColor(bool outline, Color? color, int logical)
+        {
+            int px = (int)Math.Round(logical * Scale);
+            float u = px / 16f;
+            var bmp = new Bitmap(px, px, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            using (var red = new SolidBrush(AlignRed))
+            {
+                g.SmoothingMode = SmoothingMode.None;
+                float[] glyph = R(3, 0, 10, 10);
+                if (outline)
+                {
+                    FillUnits(g, red, glyph, u);
+                    g.CompositingMode = CompositingMode.SourceCopy;
+                    using (var clear = new SolidBrush(Color.Transparent)) FillUnits(g, clear, R(5, 2, 6, 6), u);
+                    g.CompositingMode = CompositingMode.SourceOver;
+                }
+                else FillUnits(g, red, glyph, u);
+
+                // the colour bar; pale colours and "none" get a hairline so that they still show
+                int x0, x1, y0, y1;
+                SnapSpan(1, 14, u, out x0, out x1);
+                SnapSpan(11.5f, 4.5f, u, out y0, out y1);
+                var bar = new Rectangle(x0, y0, x1 - x0, y1 - y0);
+                Color fill = color.HasValue ? Color.FromArgb(255, color.Value) : Color.White;
+                using (var b = new SolidBrush(fill)) g.FillRectangle(b, bar);
+                if (fill.GetBrightness() > 0.8f)
+                    using (var pen = new Pen(Color.FromArgb(140, 140, 140), 1f)) g.DrawRectangle(pen, bar.X, bar.Y, bar.Width - 1, bar.Height - 1);
+                if (!color.HasValue)
+                {
+                    g.SmoothingMode = SmoothingMode.AntiAlias;
+                    using (var pen = new Pen(AlignRed, Math.Max(1f, u))) g.DrawLine(pen, bar.Left + 1, bar.Bottom - 1, bar.Right - 1, bar.Top);
+                }
+            }
+            return bmp;
+        }
+
+        /// <summary>Glyph of "weight": three lines, thin to thick.</summary>
+        public static Bitmap Weight(int logical)
+        {
+            return Glyph(logical, R(1, 2, 14, 1), R(1, 6, 14, 2), R(1, 11, 14, 3));
+        }
+
+        /// <summary>Glyph of "dashes": a solid, a dashed and a dotted line.</summary>
+        public static Bitmap Dashes(int logical)
+        {
+            return Glyph(logical, R(1, 2, 14, 2),
+                R(1, 7, 4, 2), R(6, 7, 4, 2), R(11, 7, 4, 2),
+                R(1, 12, 2, 2), R(5, 12, 2, 2), R(9, 12, 2, 2), R(13, 12, 2, 2));
+        }
+
+        /// <summary>One cell of a colour grid.</summary>
+        public static Bitmap ColorCell(Color color, int logical)
+        {
+            int px = (int)Math.Round(logical * Scale);
+            var bmp = new Bitmap(px, px, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                using (var b = new SolidBrush(Color.FromArgb(255, color))) g.FillRectangle(b, 0, 0, px, px);
+                using (var pen = new Pen(Color.FromArgb(70, 0, 0, 0), 1f)) g.DrawRectangle(pen, 0, 0, px - 1, px - 1);
+            }
+            return bmp;
+        }
+
+        /// <summary>"No colour": an empty cell struck through in red.</summary>
+        public static Bitmap NoColor(int logical)
+        {
+            int px = (int)Math.Round(logical * Scale);
+            var bmp = new Bitmap(px, px, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                int m = Math.Max(1, (int)Math.Round(1.5f * Scale));
+                var box = new Rectangle(m, m, px - 2 * m - 1, px - 2 * m - 1);
+                g.FillRectangle(Brushes.White, box);
+                using (var pen = new Pen(Color.FromArgb(120, 120, 120), 1f)) g.DrawRectangle(pen, box);
+                g.SmoothingMode = SmoothingMode.AntiAlias;
+                using (var pen = new Pen(AlignRed, Math.Max(1f, 1.3f * Scale))) g.DrawLine(pen, box.Left + 1, box.Bottom - 1, box.Right - 1, box.Top + 1);
+            }
+            return bmp;
+        }
+
+        /// <summary>A horizontal line of the given weight (in points) and dash style, for the weight and dash lists.</summary>
+        public static Bitmap LinePreview(int logicalWidth, int logicalHeight, float weightPoints, DashKind dash)
+        {
+            int w = (int)Math.Round(logicalWidth * Scale), h = (int)Math.Round(logicalHeight * Scale);
+            var bmp = new Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                // whole pixels, so the lines are crisp; weights under one pixel are drawn fainter instead of thinner
+                float exact = weightPoints * 96f / 72f * Scale;
+                int t = Math.Max(1, (int)Math.Round(exact));
+                int alpha = exact >= 1f ? 255 : (int)Math.Round(255 * Math.Max(0.35f, exact));
+                int pad = (int)Math.Round(3 * Scale), y = (h - t) / 2, x = pad, right = w - pad;
+                using (var b = new SolidBrush(Color.FromArgb(alpha, AlignRed)))
+                {
+                    float[] pattern = DashPattern(dash);
+                    if (pattern == null) g.FillRectangle(b, x, y, right - x, t);
+                    else
+                    {
+                        if (dash == DashKind.RoundDot)
+                        {
+                            g.SmoothingMode = SmoothingMode.AntiAlias;
+                            g.PixelOffsetMode = PixelOffsetMode.Half;
+                        }
+                        for (int i = 0; x < right; i++)
+                        {
+                            int len = Math.Max(1, (int)Math.Round(pattern[i % pattern.Length] * t));
+                            if (i % 2 == 0)      // even entries are dashes, odd ones gaps
+                            {
+                                if (dash == DashKind.RoundDot) g.FillEllipse(b, x, y, len, t);
+                                else g.FillRectangle(b, x, y, Math.Min(len, right - x), t);
+                            }
+                            x += len;
+                        }
+                    }
+                }
+            }
+            return bmp;
+        }
+
+        /// <summary>Dash and gap lengths in multiples of the line weight (Office's proportions); null = solid.</summary>
+        private static float[] DashPattern(DashKind dash)
+        {
+            switch (dash)
+            {
+                case DashKind.RoundDot: return new[] { 1f, 1f };
+                case DashKind.SquareDot: return new[] { 1f, 1f };
+                case DashKind.Dash: return new[] { 4f, 3f };
+                case DashKind.DashDot: return new[] { 4f, 3f, 1f, 3f };
+                case DashKind.LongDash: return new[] { 8f, 3f };
+                case DashKind.LongDashDot: return new[] { 8f, 3f, 1f, 3f };
+                case DashKind.LongDashDotDot: return new[] { 8f, 3f, 1f, 3f, 1f, 3f };
+                default: return null;
+            }
+        }
+
         private static PointF P(float x, float y, float u) { return new PointF(x * u, y * u); }
 
         private static void FillUnits(Graphics g, Brush b, float[] r, float unit)

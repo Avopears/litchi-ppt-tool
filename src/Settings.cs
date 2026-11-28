@@ -21,6 +21,13 @@ namespace PptSelectionExport
         public bool ImageJpeg = false;
         /// <summary>Align and distribute relative to the first selected object instead of the whole selection.</summary>
         public bool AlignToObject = false;
+        /// <summary>What the style buttons last applied; shown on the buttons. "None" = no fill / no outline.</summary>
+        public Color FillColor = Color.FromArgb(0x3B, 0x82, 0xF6);
+        public bool FillNone = false;
+        public Color OutlineColor = Color.Black;
+        public bool OutlineNone = false;
+        public float OutlineWeight = 1.5f;
+        public int OutlineDash = 0;
         /// <summary>Colours chosen in the colour picker, most recent first.</summary>
         public readonly List<Color> RecentColors = new List<Color>();
         private const int MaxRecent = 12;
@@ -51,6 +58,16 @@ namespace PptSelectionExport
                         Color rc;
                         if (s.RecentColors.Count < MaxRecent && TryParseHex(hex, out rc)) s.RecentColors.Add(rc);
                     }
+                    Color sc;
+                    if (TryParseHex(Convert.ToString(k.GetValue("FillColor", ""), CultureInfo.InvariantCulture), out sc)) s.FillColor = sc;
+                    if (TryParseHex(Convert.ToString(k.GetValue("OutlineColor", ""), CultureInfo.InvariantCulture), out sc)) s.OutlineColor = sc;
+                    s.FillNone = Convert.ToInt32(k.GetValue("FillNone", 0), CultureInfo.InvariantCulture) != 0;
+                    s.OutlineNone = Convert.ToInt32(k.GetValue("OutlineNone", 0), CultureInfo.InvariantCulture) != 0;
+                    float weight;
+                    if (float.TryParse(Convert.ToString(k.GetValue("OutlineWeight", "1.5"), CultureInfo.InvariantCulture), NumberStyles.Float, CultureInfo.InvariantCulture, out weight)
+                        && weight >= StyleTools.MinWeight && weight <= StyleTools.MaxWeight) s.OutlineWeight = weight;
+                    int dash = Convert.ToInt32(k.GetValue("OutlineDash", 0), CultureInfo.InvariantCulture);
+                    if (dash >= 0 && dash < StyleTools.Dashes.Length) s.OutlineDash = dash;
                     int dpi = Convert.ToInt32(k.GetValue("Dpi", 300), CultureInfo.InvariantCulture);
                     if (dpi >= 48 && dpi <= 1200) s.Dpi = dpi;
                     Color c;
@@ -75,6 +92,12 @@ namespace PptSelectionExport
                     k.SetValue("AlignToObject", AlignToObject ? 1 : 0, RegistryValueKind.DWord);
                     k.SetValue("RecentColors", string.Join(",", RecentColors.ConvertAll(ToHex).ToArray()), RegistryValueKind.String);
                     k.SetValue("Color", ToHex(Color), RegistryValueKind.String);
+                    k.SetValue("FillColor", ToHex(FillColor), RegistryValueKind.String);
+                    k.SetValue("FillNone", FillNone ? 1 : 0, RegistryValueKind.DWord);
+                    k.SetValue("OutlineColor", ToHex(OutlineColor), RegistryValueKind.String);
+                    k.SetValue("OutlineNone", OutlineNone ? 1 : 0, RegistryValueKind.DWord);
+                    k.SetValue("OutlineWeight", OutlineWeight.ToString("0.##", CultureInfo.InvariantCulture), RegistryValueKind.String);
+                    k.SetValue("OutlineDash", OutlineDash, RegistryValueKind.DWord);
                 }
             }
             catch { }

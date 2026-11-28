@@ -13,10 +13,10 @@ using Office = Microsoft.Office.Core;
 using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 
 [assembly: AssemblyTitle("PptSelectionExport")]
-[assembly: AssemblyDescription("PowerPoint add-in: export the selected objects as PDF / SVG / PNG / JPG, and align or distribute them")]
+[assembly: AssemblyDescription("PowerPoint add-in: export the selected objects as PDF / SVG / PNG / JPG, and align, rotate, merge or restyle them")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.5.0.0")]
-[assembly: AssemblyFileVersion("1.5.0.0")]
+[assembly: AssemblyVersion("1.6.0.0")]
+[assembly: AssemblyFileVersion("1.6.0.0")]
 [assembly: ComVisible(false)]
 
 namespace PptSelectionExport
@@ -113,6 +113,16 @@ namespace PptSelectionExport
                     case "grpAlign": bmp = Icons.Align(AlignCommand.Left, 32); break;
                     case "grpRotate": bmp = Icons.Transform(TransformCommand.RotateRight, 32); break;
                     case "grpMerge": bmp = Icons.Merge(MergeCommand.Union, 32); break;
+                    // shape style: the buttons show what they applied last
+                    case "galFill": bmp = Icons.StyleColor(false, _settings.FillNone ? (Color?)null : _settings.FillColor, 16); break;
+                    case "galOutline": bmp = Icons.StyleColor(true, _settings.OutlineNone ? (Color?)null : _settings.OutlineColor, 16); break;
+                    case "galWeight": bmp = Icons.Weight(16); break;
+                    case "galDash": bmp = Icons.Dashes(16); break;
+                    case "btnFillNone":
+                    case "btnOutlineNone": bmp = Icons.NoColor(16); break;
+                    case "btnFillMore":
+                    case "btnOutlineMore": bmp = Icons.Palette(16); break;
+                    case "grpStyle": bmp = Icons.StyleColor(false, _settings.FillColor, 32); break;
                     default:
                         Color c;
                         if (!Settings.TryParseHex(control.Tag, out c)) return null;
@@ -440,6 +450,220 @@ namespace PptSelectionExport
             }
             if (result == MergeResult.NeedTwo) Info(owner, Strings.T("msg.merge.needtwo"), "title.merge");
             else if (result == MergeResult.Grouped) Info(owner, Strings.T("msg.merge.grouped"), "title.merge");
+        }
+
+        // ------------------------------------------------------------ shape style: fill, outline, weight, dashes
+
+        private const int ColorCellSize = 18, LineItemWidth = 96, LineItemHeight = 18;   // as in Ribbon.xml
+
+        /// <summary>The colour grid of the fill and outline lists: the picker's palette, then the colours used recently.</summary>
+        private List<Color> StyleColors()
+        {
+            var list = new List<Color>();
+            foreach (string hex in ColorPickerForm.Palette)
+            {
+                Color c;
+                if (Settings.TryParseHex(hex, out c)) list.Add(c);
+            }
+            foreach (Color recent in _settings.RecentColors)
+            {
+                bool known = false;
+                foreach (Color c in list) if (c.ToArgb() == Color.FromArgb(255, recent).ToArgb()) { known = true; break; }
+                if (!known) list.Add(Color.FromArgb(255, recent));
+            }
+            return list;
+        }
+
+        public int GetColorCount(Office.IRibbonControl control) { return StyleColors().Count; }
+
+        public string GetColorId(Office.IRibbonControl control, int index) { return control.Id + "Color" + index; }
+
+        public object GetColorImage(Office.IRibbonControl control, int index)
+        {
+            try
+            {
+                List<Color> colors = StyleColors();
+                if (index < 0 || index >= colors.Count) return null;
+                using (Bitmap bmp = Icons.ColorCell(colors[index], ColorCellSize)) return Icons.ToPictureDisp(bmp);
+            }
+            catch { return null; }
+        }
+
+        public string GetColorTip(Office.IRibbonControl control, int index)
+        {
+            List<Color> colors = StyleColors();
+            return index >= 0 && index < colors.Count ? "#" + Settings.ToHex(colors[index]) : "";
+        }
+
+        /// <summary>Marks the colour the button applied last, when it is in the grid.</summary>
+        public int GetColorIndex(Office.IRibbonControl control)
+        {
+            bool outline = control.Id == "galOutline";
+            if (outline ? _settings.OutlineNone : _settings.FillNone) return -1;
+            int argb = Color.FromArgb(255, outline ? _settings.OutlineColor : _settings.FillColor).ToArgb();
+            List<Color> colors = StyleColors();
+            for (int i = 0; i < colors.Count; i++) if (colors[i].ToArgb() == argb) return i;
+            return -1;
+        }
+
+        public void OnColorPicked(Office.IRibbonControl control, string selectedId, int selectedIndex)
+        {
+            List<Color> colors = StyleColors();
+            if (selectedIndex < 0 || selectedIndex >= colors.Count) return;
+            ApplyColor(control.Id == "galOutline", colors[selectedIndex]);
+        }
+
+        /// <summary>The buttons under the lists: no fill / no outline, more colours, more weights.</summary>
+        public void OnStyleButton(Office.IRibbonControl control)
+        {
+            switch (control.Id)
+            {
+                case "btnFillNone": ApplyColor(false, null); break;
+                case "btnOutlineNone": ApplyColor(true, null); break;
+                case "btnFillMore": PickStyleColor(false); break;
+                case "btnOutlineMore": PickStyleColor(true); break;
+                case "btnWeightMore":
+                    IWin32Window owner = Owner();
+                    using (var dlg = new WeightForm(_settings.OutlineWeight, owner))
+                    {
+                        if (dlg.ShowDialog(owner) != DialogResult.OK) return;
+                        ApplyWeight(dlg.Weight);
+                    }
+                    break;
+            }
+        }
+
+        private void PickStyleColor(bool outline)
+        {
+            IWin32Window owner = Owner();
+            Color current = outline ? _settings.OutlineColor : _settings.FillColor;
+            using (var dlg = new ColorPickerForm(current, _settings.RecentColors, owner, Strings.T(outline ? "picker.outline" : "picker.fill")))
+            {
+                if (dlg.ShowDialog(owner) != DialogResult.OK) return;
+                _settings.AddRecent(dlg.SelectedColor);
+                ApplyColor(outline, dlg.SelectedColor);
+            }
+        }
+
+        /// <param name="color">Null = no fill / no outline.</param>
+        private void ApplyColor(bool outline, Color? color)
+        {
+            // the button remembers a colour only once it has really been applied
+            if (ApplyStyle(range => outline ? StyleTools.SetOutlineColor(range, color) : StyleTools.SetFill(range, color)))
+            {
+                if (outline)
+                {
+                    _settings.OutlineNone = !color.HasValue;
+                    if (color.HasValue) _settings.OutlineColor = Color.FromArgb(255, color.Value);
+                }
+                else
+                {
+                    _settings.FillNone = !color.HasValue;
+                    if (color.HasValue) _settings.FillColor = Color.FromArgb(255, color.Value);
+                }
+            }
+            _settings.Save();
+            RefreshStyle("galFill", "galOutline");      // both: the recent colours are shared
+        }
+
+        public int GetWeightCount(Office.IRibbonControl control) { return StyleTools.Weights.Length; }
+        public string GetWeightId(Office.IRibbonControl control, int index) { return "weight" + index; }
+        public string GetWeightLabel(Office.IRibbonControl control, int index) { return StyleTools.FormatWeight(StyleTools.Weights[index]); }
+
+        public object GetWeightImage(Office.IRibbonControl control, int index)
+        {
+            try
+            {
+                using (Bitmap bmp = Icons.LinePreview(LineItemWidth, LineItemHeight, StyleTools.Weights[index], DashKind.Solid)) return Icons.ToPictureDisp(bmp);
+            }
+            catch { return null; }
+        }
+
+        public int GetWeightIndex(Office.IRibbonControl control)
+        {
+            for (int i = 0; i < StyleTools.Weights.Length; i++)
+                if (Math.Abs(StyleTools.Weights[i] - _settings.OutlineWeight) < 0.005f) return i;
+            return -1;
+        }
+
+        public void OnWeightPicked(Office.IRibbonControl control, string selectedId, int selectedIndex)
+        {
+            if (selectedIndex >= 0 && selectedIndex < StyleTools.Weights.Length) ApplyWeight(StyleTools.Weights[selectedIndex]);
+        }
+
+        private void ApplyWeight(float points)
+        {
+            if (ApplyStyle(range => StyleTools.SetWeight(range, points)))
+            {
+                _settings.OutlineWeight = points;
+                _settings.Save();
+            }
+            RefreshStyle("galWeight");
+        }
+
+        private static readonly string[] DashKeys =
+        {
+            "dash.solid", "dash.rounddot", "dash.squaredot", "dash.dash", "dash.dashdot", "dash.longdash", "dash.longdashdot", "dash.longdashdotdot"
+        };
+
+        public int GetDashCount(Office.IRibbonControl control) { return StyleTools.Dashes.Length; }
+        public string GetDashId(Office.IRibbonControl control, int index) { return "dash" + index; }
+        public string GetDashLabel(Office.IRibbonControl control, int index) { return Strings.T(DashKeys[index]); }
+        public int GetDashIndex(Office.IRibbonControl control) { return _settings.OutlineDash; }
+
+        public object GetDashImage(Office.IRibbonControl control, int index)
+        {
+            try
+            {
+                using (Bitmap bmp = Icons.LinePreview(LineItemWidth, LineItemHeight, 1.5f, StyleTools.Dashes[index])) return Icons.ToPictureDisp(bmp);
+            }
+            catch { return null; }
+        }
+
+        public void OnDashPicked(Office.IRibbonControl control, string selectedId, int selectedIndex)
+        {
+            if (selectedIndex < 0 || selectedIndex >= StyleTools.Dashes.Length) return;
+            DashKind dash = StyleTools.Dashes[selectedIndex];
+            if (ApplyStyle(range => StyleTools.SetDash(range, dash)))
+            {
+                _settings.OutlineDash = selectedIndex;
+                _settings.Save();
+            }
+            RefreshStyle("galDash");
+        }
+
+        /// <summary>
+        /// Applies one style setting to the selected shapes, as a single undo step.
+        /// False (after telling the user why) when nothing was changed.
+        /// </summary>
+        private bool ApplyStyle(Func<PowerPoint.ShapeRange, int> change)
+        {
+            IWin32Window owner = Owner();
+            try
+            {
+                PowerPoint.DocumentWindow win;
+                PowerPoint.Selection sel;
+                bool isChild;
+                PowerPoint.ShapeRange range = SelectedShapes(owner, "title.style", "msg.shape.nowindow", "msg.shape.noselection", out win, out sel, out isChild);
+                if (range == null) return false;
+                StartUndoEntry();
+                if (change(range) > 0) return true;
+                Info(owner, Strings.T("msg.style.none"), "title.style");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(owner, Strings.T("msg.shape.failed", ex.Message), Strings.T("title.style"), MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            return false;
+        }
+
+        private void RefreshStyle(params string[] controlIds)
+        {
+            if (_ribbon == null) return;
+            foreach (string id in controlIds)
+            {
+                try { _ribbon.InvalidateControl(id); } catch { }
+            }
         }
 
         // ------------------------------------------------------------ helpers

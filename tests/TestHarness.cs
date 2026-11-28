@@ -70,7 +70,7 @@ namespace PptSelectionExport
             if (args.Length > 1 && args[1] == "align")
             {
                 app = new PowerPoint.Application();
-                try { AlignTests.Run(app); ShapeToolsTests.Run(app); }
+                try { AlignTests.Run(app); ShapeToolsTests.Run(app); StyleTests.Run(app); }
                 finally { if (app.Presentations.Count == 0) app.Quit(); }
                 return;
             }
@@ -163,6 +163,7 @@ namespace PptSelectionExport
 
                 AlignTests.Run(app);
                 ShapeToolsTests.Run(app);
+                StyleTests.Run(app);
             }
             finally
             {

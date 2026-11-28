@@ -217,7 +217,7 @@ namespace PptSelectionExport
         private const int SwatchSize = 28, SwatchColumns = 12;
 
         /// <summary>Two rows: plain colours, then soft tints that suit figure backgrounds.</summary>
-        private static readonly string[] Palette =
+        internal static readonly string[] Palette =
         {
             "FFFFFF", "BFBFBF", "7F7F7F", "000000", "EF4444", "F97316", "EAB308", "22C55E", "14B8A6", "3B82F6", "8B5CF6", "EC4899",
             "F8F9FA", "F2F2F2", "FFF8E1", "E8F1FB", "FEE2E2", "FFEDD5", "FEF9C3", "DCFCE7", "CCFBF1", "DBEAFE", "EDE9FE", "FCE7F3",
@@ -246,7 +246,10 @@ namespace PptSelectionExport
 
         public Color SelectedColor { get { return _color; } }
 
-        public ColorPickerForm(Color current, IList<Color> recent, IWin32Window owner)
+        public ColorPickerForm(Color current, IList<Color> recent, IWin32Window owner) : this(current, recent, owner, null) { }
+
+        /// <param name="title">Heading of the window; the background-colour heading when null.</param>
+        public ColorPickerForm(Color current, IList<Color> recent, IWin32Window owner, string title)
         {
             _original = Color.FromArgb(255, current);
             _recent = new List<Color>(recent ?? new Color[0]);
@@ -254,7 +257,7 @@ namespace PptSelectionExport
             _color = _original;
             ToHsv(_color, out _h, out _s, out _v);
 
-            Text = Strings.T("picker.title");
+            Text = title ?? Strings.T("picker.title");
             AutoScaleMode = AutoScaleMode.None;
             FormBorderStyle = FormBorderStyle.None;
             StartPosition = FormStartPosition.Manual;

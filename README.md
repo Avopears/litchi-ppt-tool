@@ -7,7 +7,8 @@ Select some objects on a slide, click one button, and get **just those objects**
 **PDF**, **SVG**, **PNG** or **JPG** — cropped to the smallest rectangle around them,
 with a transparent or solid-colour background.
 It also has one-click **align and distribute** buttons (which can align to a chosen object and
-leave connectors glued to their shapes), **rotate / flip** and **boolean** (merge shapes) buttons.
+leave connectors glued to their shapes), **rotate / flip** and **boolean** (merge shapes) buttons,
+and a **Style** group for the fill colour, outline colour, weight and dashes of the selected shapes.
 
 ![The add-in's "Litchi" tab in PowerPoint](docs/ribbon.jpg)
 
@@ -111,6 +112,24 @@ object turns or mirrors about its own centre and stays where it is.
 - Select at least 2 shapes. Groups have to be ungrouped first.
 - The result is selected afterwards; one Ctrl+Z takes it back.
 
+### Style
+
+Four drop-down lists change how the selected shapes look, without leaving the Litchi tab:
+
+- **Fill**: click a swatch to fill the shapes with it. *No Fill* and *More Colors…* are below the grid.
+- **Outline**: the outline colour; for lines and connectors that is the colour of the line itself.
+  *No Outline* and *More Colors…* are below the grid.
+- **Weight**: the outline weight in points, from 0.25 to 6; *More Weights…* takes any value from 0.05 to 100.
+- **Dashes**: solid, round dot, square dot, dash, dash dot, long dash, long dash dot, long dash dot dot.
+
+The colour grids hold the same palette as the colour picker, followed by the colours you used
+recently; *More Colors…* opens that picker, where you can also type a hex or RGB value.
+
+- Every shape inside a selected group is changed; you can also select single shapes inside a group.
+- Lines have no fill and are skipped by *Fill*. Tables, charts and similar objects are skipped.
+- Choosing a weight or a dash style gives a shape without an outline one, as PowerPoint does.
+- Each choice is a single undo step.
+
 ## Good to know
 
 - PDF export needs objects selected on a slide in the normal view. Objects on a master, a layout
@@ -145,7 +164,8 @@ powershell -ExecutionPolicy Bypass -File .\tests\run.ps1
 runs the tests against the PowerPoint on your machine: it builds throw-away presentations,
 exports many kinds of selections in every format, and aligns and distributes many kinds of
 objects, comparing the results with PowerPoint's own commands, and finally tests rotate, flip,
-the boolean operations and the colour picker's colour maths. Add `align` to skip the export tests.
+the boolean operations, the colour picker's colour maths and the style commands.
+Add `align` to skip the export tests.
 
 | File | What it does |
 | --- | --- |
@@ -156,11 +176,12 @@ the boolean operations and the colour picker's colour maths. Add `align` to skip
 | `src/SvgTools.cs` | Reads the selection bounds; adds the SVG background |
 | `src/Aligner.cs` | Align and distribute |
 | `src/ShapeTools.cs` | Rotate, flip and the boolean operations |
-| `src/ColorPicker.cs` | The colour picker |
+| `src/StyleTools.cs` | Fill colour, outline colour, weight and dashes |
+| `src/ColorPicker.cs`, `src/WeightDialog.cs` | The colour picker; the "More Weights…" window |
 | `src/Strings.cs` | All interface text, Chinese and English |
 | `src/Icons.cs`, `src/Settings.cs` | Ribbon icons drawn in code; remembered settings |
 | `installer/Setup.cs` | The exe installer / uninstaller |
-| `tests/TestHarness.cs`, `tests/AlignTests.cs`, `tests/ShapeToolsTests.cs` | Tests that drive PowerPoint directly |
+| `tests/TestHarness.cs`, `tests/AlignTests.cs`, `tests/ShapeToolsTests.cs`, `tests/StyleTests.cs` | Tests that drive PowerPoint directly |
 
 ### How it works
 
