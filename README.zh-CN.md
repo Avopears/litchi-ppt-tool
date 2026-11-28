@@ -33,7 +33,7 @@
 不需要管理员权限。
 
 1. 打开 **[最新版 Release](https://github.com/Avopears/litchi-ppt-tool/releases/latest)**，在 *Assets* 里下载安装程序。
-   文件名带版本号，例如 `Litchi-Setup-1.7.0.exe`。
+   文件名带版本号，例如 `Litchi-Setup-1.7.1.exe`。
 2. 关闭 PowerPoint，运行安装程序。安装位置可以用默认的，也可以自己选文件夹。
 3. 打开 PowerPoint，插件的选项卡叫 **Litchi**，就在“视图”后面。
 

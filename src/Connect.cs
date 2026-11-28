@@ -15,8 +15,8 @@ using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 [assembly: AssemblyTitle("PptSelectionExport")]
 [assembly: AssemblyDescription("PowerPoint add-in: export the selected objects as PDF / SVG / PNG / JPG, and align, rotate, merge or restyle them")]
 [assembly: AssemblyProduct("PptSelectionExport")]
-[assembly: AssemblyVersion("1.7.0.0")]
-[assembly: AssemblyFileVersion("1.7.0.0")]
+[assembly: AssemblyVersion("1.7.1.0")]
+[assembly: AssemblyFileVersion("1.7.1.0")]
 [assembly: ComVisible(false)]
 
 namespace PptSelectionExport

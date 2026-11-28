@@ -158,10 +158,39 @@ namespace PptSelectionExport
         }
     }
 
+    /// <summary>
+    /// The text box of every field in the add-in's windows. Ctrl+A selects all of its text: a plain
+    /// Windows edit control does not do that by itself here. (It does in the installer, which
+    /// turns on visual styles and so gets the newer control; an add-in inside PowerPoint does not.)
+    /// </summary>
+    internal sealed class SelectAllTextBox : TextBox
+    {
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (keyData == (Keys.Control | Keys.A))
+            {
+                SelectAll();
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            // the same key when it arrives as a character (0x01) instead: select, and do not pass it on to beep
+            if (m.Msg == 0x0102 /* WM_CHAR */ && m.WParam.ToInt64() == 1)
+            {
+                SelectAll();
+                return;
+            }
+            base.WndProc(ref m);
+        }
+    }
+
     /// <summary>A text box with a rounded border that turns accent-coloured when focused, with an optional prefix such as "#".</summary>
     internal sealed class FieldBox : Control
     {
-        public readonly TextBox Box = new TextBox();
+        public readonly TextBox Box = new SelectAllTextBox();
         private string _prefix = "";
 
         public FieldBox()
